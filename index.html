@@ -17,15 +17,17 @@
 
       import * as THREE from './three.module.js';
 
-      import { OrbitControls } from './OrbitControls.js';
+      //import { OrbitControls } from './OrbitControls.js';
       import { GLTFLoader } from './GLTFLoader.js';
-      import { RGBELoader } from './RGBELoader.js';
+      import {TextureLoader} from "./three/src/loaders/TextureLoader.js"
+      //import { GLTFExporter } from './three/addons/exporters/GLTFExporter.js';
+      //import { RGBELoader } from './RGBELoader.js';
 
       let camera, scene, renderer;
       let TIME = 0
 
       init();
-      render();
+      //render();
 
 
 
@@ -38,6 +40,11 @@
         camera.position.set( - 1.8, 0.6, 2.7 );
 
         scene = new THREE.Scene();
+
+//         const color = 0xFFFFFF;
+// const intensity = 1;
+// const light = new THREE.AmbientLight(color, intensity);
+// scene.add(light);
 
         const cube = new THREE.BoxGeometry(0.5,0.5,0.5)
         const material = new THREE.ShaderMaterial({
@@ -182,7 +189,7 @@
 
 
         const planeGeometry = new THREE.PlaneGeometry(3,3,3)
-        const geometry = new THREE.SphereGeometry( 1, 32, 32 ); 
+        const geometry = new THREE.SphereGeometry( 0.4, 32, 32 ); 
 
 
         const plane = new THREE.Mesh(planeGeometry, material)
@@ -193,31 +200,72 @@
         const sphere = new THREE.Mesh(geometry, material)
         //sphere.rotation.y = Math.PI / 2
         sphere.rotation.z = Math.PI / 2
+        sphere.position.x = -4
+        sphere.position.y = 1
         scene.add(sphere)
+
+        console.log(camera.position)
+        camera.position.set(0,0,5)
+
+        const backgrondPlaneGeometry = new THREE.PlaneGeometry(12,4.2)
+        //const backgrondPlaneMaterial = new THREE.StandardMaterial({color: "#ffffff"}) 
+        
+
+        const loader = new THREE.TextureLoader();
+        const texture = loader.load( './background.jpg' );
+        //texture.colorSpace = THREE.SRGBColorSpace;
+         
+        const backgrondPlaneMaterial = new THREE.MeshBasicMaterial({
+          color: 0xFF8844,
+          map: texture,
+        });
+
+        const backgrondPlane = new THREE.Mesh(backgrondPlaneGeometry, backgrondPlaneMaterial)
+        backgrondPlane.position.x = 0
+        backgrondPlane.position.y = 0
+
+        scene.add(backgrondPlane)
+
+
+
+         const loader2 = new GLTFLoader();
+            loader2.load( 'zuko.gltf', function ( gltf ) {
+
+              scene.add( gltf.scene );
+
+              console.log({gltf})
+
+              console.log(scene)
+              scene.children[2].position.z = 0.5
+
+              render();
+
+            } );
+
         //scene.add(plane)
 
-        new RGBELoader()
-          .load( 'environment.hdr', function ( texture ) {
+        // new RGBELoader()
+        //   .load( 'environment.hdr', function ( texture ) {
 
-            texture.mapping = THREE.EquirectangularReflectionMapping;
+        //     texture.mapping = THREE.EquirectangularReflectionMapping;
 
-            scene.background = texture;
-            scene.environment = texture;
+        //     scene.background = texture;
+        //     scene.environment = texture;
 
-            render();
+        //     render();
 
-            // model
+        //     // model
 
-            // const loader = new GLTFLoader();
-            // loader.load( 'suzanne.gltf', function ( gltf ) {
+        //     // const loader = new GLTFLoader();
+        //     // loader.load( 'suzanne.gltf', function ( gltf ) {
 
-            //   scene.add( gltf.scene );
+        //     //   scene.add( gltf.scene );
 
-            //   render();
+        //     //   render();
 
-            // } );
+        //     // } );
 
-          } );
+        //   } );
 
 
         
@@ -225,17 +273,17 @@
         renderer = new THREE.WebGLRenderer( { antialias: true } );
         renderer.setPixelRatio( window.devicePixelRatio );
         renderer.setSize( window.innerWidth, window.innerHeight );
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1;
-        renderer.outputEncoding = THREE.sRGBEncoding;
+        // renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        // renderer.toneMappingExposure = 1;
+        // renderer.outputEncoding = THREE.sRGBEncoding;
         container.appendChild( renderer.domElement );
 
-        const controls = new OrbitControls( camera, renderer.domElement );
-        //controls.addEventListener( 'change', render ); // use if there is no animation loop
-        controls.minDistance = 2;
-        controls.maxDistance = 10;
-        controls.target.set( 0, 0, - 0.2 );
-        controls.update();
+        // const controls = new OrbitControls( camera, renderer.domElement );
+        // //controls.addEventListener( 'change', render ); // use if there is no animation loop
+        // controls.minDistance = 2;
+        // controls.maxDistance = 40;
+        // controls.target.set( 0, 0, - 0.2 );
+        // controls.update();
 
         window.addEventListener( 'resize', onWindowResize );
 
@@ -287,13 +335,15 @@
         
 
         requestAnimationFrame(render)
-        sphere.position.x += 0.05
+        sphere.position.x += 0.17
         TIME += 0.005;
         updateUniforms();
         renderer.render( scene, camera );
         
 
       }
+
+      render()
 
       }
 
