@@ -20,6 +20,7 @@
       //import { OrbitControls } from './OrbitControls.js';
       import { GLTFLoader } from './GLTFLoader.js';
       import {TextureLoader} from "./three/src/loaders/TextureLoader.js"
+      import {AnimationMixer} from "./three/src/animation/AnimationMixer.js"
       //import { GLTFExporter } from './three/addons/exporters/GLTFExporter.js';
       //import { RGBELoader } from './RGBELoader.js';
 
@@ -41,10 +42,18 @@
 
         scene = new THREE.Scene();
 
-        const color = 0xFFFFFF;
-const intensity = 1;
-const light = new THREE.AmbientLight(color, intensity);
-scene.add(light);
+
+
+//         const light = new THREE.PointLight( 0xff0000, 1, 100 );
+// light.position.set( 50, 50, 50 );
+// scene.add( light );
+
+//         const color = 0xFFFFFF;
+// const intensity = 1;
+// const light = new THREE.AmbientLight(color, intensity);
+// scene.add(light);
+
+        let animationAction, mixer;
 
         const cube = new THREE.BoxGeometry(0.5,0.5,0.5)
         const material = new THREE.ShaderMaterial({
@@ -237,6 +246,24 @@ scene.add(light);
 
               console.log(scene)
               scene.children[2].position.z = 0.5
+              scene.children[2].position.y = -1
+
+              const light = new THREE.AmbientLight( 0xffffff );
+              light.intensity = 2
+              scene.add( light );
+
+              
+
+              mixer = new AnimationMixer(gltf.scene)
+
+              console.log({mixer})
+
+              animationAction = mixer.clipAction(gltf.animations[0])
+
+              console.log(animationAction)
+
+              
+
 
               render();
 
@@ -328,14 +355,21 @@ scene.add(light);
 
       //
 
+      const clock = new THREE.Clock()
 
       function render() {
 
 
-        
+
+
+        if(animationAction){
+          mixer.update(clock.getDelta()) // THIS IS ANIMATION
+          console.log("play")
+          animationAction.play()
+        }
 
         requestAnimationFrame(render)
-        sphere.position.x += 0.17
+        sphere.position.x += 0.01//0.17
         TIME += 0.005;
         updateUniforms();
         renderer.render( scene, camera );
