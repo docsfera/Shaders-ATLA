@@ -17,7 +17,7 @@
 
       import * as THREE from './three.module.js';
 
-      //import { OrbitControls } from './OrbitControls.js';
+      import { OrbitControls } from './OrbitControls.js';
       import { GLTFLoader } from './GLTFLoader.js';
       import {TextureLoader} from "./three/src/loaders/TextureLoader.js"
       import {AnimationMixer} from "./three/src/animation/AnimationMixer.js"
@@ -209,8 +209,8 @@
         const sphere = new THREE.Mesh(geometry, material)
         //sphere.rotation.y = Math.PI / 2
         sphere.rotation.z = Math.PI / 2
-        sphere.position.x = -4
-        sphere.position.y = 1
+        //sphere.position.x = -4
+        //sphere.position.y = 1
         scene.add(sphere)
 
         console.log(camera.position)
@@ -259,6 +259,9 @@
               console.log({mixer})
 
               animationAction = mixer.clipAction(gltf.animations[0])
+              animationAction.setLoop(THREE.LoopOnce);
+              animationAction.clampWhenFinished = true;
+              animationAction.enable = true;
 
               console.log(animationAction)
 
@@ -305,12 +308,12 @@
         // renderer.outputEncoding = THREE.sRGBEncoding;
         container.appendChild( renderer.domElement );
 
-        // const controls = new OrbitControls( camera, renderer.domElement );
-        // //controls.addEventListener( 'change', render ); // use if there is no animation loop
-        // controls.minDistance = 2;
-        // controls.maxDistance = 40;
-        // controls.target.set( 0, 0, - 0.2 );
-        // controls.update();
+        const controls = new OrbitControls( camera, renderer.domElement );
+        //controls.addEventListener( 'change', render ); // use if there is no animation loop
+        controls.minDistance = 2;
+        controls.maxDistance = 40;
+        controls.target.set( 0, 0, - 0.2 );
+        controls.update();
 
         window.addEventListener( 'resize', onWindowResize );
 
@@ -356,6 +359,8 @@
       //
 
       const clock = new THREE.Clock()
+      sphere.visible = false
+      sphere.rotation.y = -Math.PI / 2
 
       function render() {
 
@@ -369,9 +374,18 @@
         }
 
         requestAnimationFrame(render)
-        sphere.position.x += 0.01//0.17
+
+        
+        
         TIME += 0.005;
         updateUniforms();
+         if(TIME > 0.8){
+          sphere.position.z += 0.1//0.17
+          
+          sphere.visible = true
+        }else{
+          
+        }
         renderer.render( scene, camera );
         
 
