@@ -58,7 +58,6 @@
         const cube = new THREE.BoxGeometry(0.5,0.5,0.5)
         const material = new THREE.ShaderMaterial({
           side:THREE.DoubleSide,
-
             uniforms: {
                 diffuse: { value: new THREE.Color(0xffffff) },
                 u_time: { type: "f", value: 0 },
@@ -225,7 +224,7 @@
         const texture = loader.load( './background.jpg' );
         //texture.colorSpace = THREE.SRGBColorSpace;
          
-        const backgrondPlaneMaterial = new THREE.MeshPhongMaterial({
+        const backgrondPlaneMaterial = new THREE.MeshBasicMaterial({
           color: 0xFF8844,
           map: texture,
         });
@@ -233,10 +232,6 @@
         const backgrondPlane = new THREE.Mesh(backgrondPlaneGeometry, backgrondPlaneMaterial)
         backgrondPlane.position.x = 0
         backgrondPlane.position.y = 0
-        //backgrondPlane.position.z = -1
-
-        backgrondPlane.receiveShadow = true;
-
 
         scene.add(backgrondPlane)
 
@@ -244,16 +239,8 @@
 
          const loader2 = new GLTFLoader();
             loader2.load( 'zuko.gltf', function ( gltf ) {
-              const g = gltf.scene
-              g.castShadow = true;
-              g.receiveShadow = true;
 
-
-              g.traverse(node => {
-                if(node.isMesh) node.castShadow = true
-              })
-
-              scene.add( g );
+              scene.add( gltf.scene );
 
               console.log({gltf})
 
@@ -261,26 +248,9 @@
               scene.children[2].position.z = 0.5
               scene.children[2].position.y = -1
 
-              const light =  new THREE.DirectionalLight("#ffffff", 0.2);
-              var cameraNear = 1, cameraFar = 5000;
-              light.castShadow = true;
-              light.shadow.mapSize.width = 4024;
-              light.shadow.mapSize.height = 4024;
-              light.shadow.camera.near = cameraNear;
-              light.shadow.camera.far = cameraFar;
-
-
-             light.position.z = 400
-             light.position.x = 200
-             light.position.y = 100
-
-              //light.intensity = 2
+              const light = new THREE.AmbientLight( 0xffffff );
+              light.intensity = 2
               scene.add( light );
-
-
-              const light2 = new THREE.AmbientLight( 0xffffff );
-              light2.intensity = 0.8
-              scene.add( light2 );
 
               
 
@@ -294,9 +264,6 @@
               animationAction.enable = true;
 
               console.log(animationAction)
-
-
-              
 
               
 
@@ -333,9 +300,7 @@
 
         
 
-        renderer = new THREE.WebGLRenderer();
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.BasicShadowMap;
+        renderer = new THREE.WebGLRenderer( { antialias: true } );
         renderer.setPixelRatio( window.devicePixelRatio );
         renderer.setSize( window.innerWidth, window.innerHeight );
         // renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -394,13 +359,8 @@
       //
 
       const clock = new THREE.Clock()
-      //sphere.visible = true
-      //sphere.layers.set(2)
-      //sphere.position.y = -10000
+      sphere.visible = false
       sphere.rotation.y = -Math.PI / 2
-      sphere.frustumCulled = false;
-
-      let once = false
 
       function render() {
 
@@ -409,7 +369,7 @@
 
         if(animationAction){
           mixer.update(clock.getDelta()) // THIS IS ANIMATION
-         // console.log("play")
+          console.log("play")
           animationAction.play()
         }
 
@@ -419,22 +379,13 @@
         
         TIME += 0.005;
         updateUniforms();
-
-
-         if(TIME > 0.4){
+         if(TIME > 0.8){
           sphere.position.z += 0.1//0.17
-          //sphere.visible = true
-          sphere.scale.set(1,1,1)
+          
+          sphere.visible = true
         }else{
           
         }
-
-        if(TIME > 0.01 && TIME < 0.4){
-          //sphere.visible = false
-          sphere.scale.set(0,0,0)
-        }
-
-        console.log("render")
         renderer.render( scene, camera );
         
 
