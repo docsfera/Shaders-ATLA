@@ -132,56 +132,70 @@
                     return vec3(xy + .5, 1.);
                 }
 
+                float snoise(vec3 uv, float res)
+{
+  const vec3 s = vec3(1e0, 1e2, 1e3);
+  
+  uv *= res;
+  
+  vec3 uv0 = floor(mod(uv, res))*s;
+  vec3 uv1 = floor(mod(uv+vec3(1.), res))*s;
+  
+  vec3 f = fract(uv); f = f*f*(3.0-2.0*f);
+
+  vec4 v = vec4(uv0.x+uv0.y+uv0.z, uv1.x+uv0.y+uv0.z,
+              uv0.x+uv1.y+uv0.z, uv1.x+uv1.y+uv0.z);
+
+  vec4 r = fract(sin(v*1e-1)*1e3);
+  float r0 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+  
+  r = fract(sin((v + uv1.z - uv0.z)*1e-1)*1e3);
+  float r1 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+  
+  return mix(r0, r1, f.z)*2.-1.;
+}
+
 
                 void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 {
-                    // Normalized pixel coordinates (from 0 to 1)
-                    //vec2 uv = fragCoord/iResolution.xy;
+                    
+                    vec2 p = -.5 + fragCoord.xy / iResolution.xy;
+                    p.x *= iResolution.x/iResolution.y;
+                    
+                    float color = 3.0 - (3.*length(2.*p));
+                    
+                    vec3 coord = vec3(atan(p.x,p.y)/6.2832+.5, length(p)*.4, .5);
+                    
+                    for(int i = 1; i <= 7; i++)
+                    {
+                      float power = pow(2.0, float(i));
+                      color += (1.5 / power) * snoise(coord + vec3(0.,-u_time*.05, u_time*.01), power*16.);
+                    }
+                    fragColor = vec4( color, pow(max(color,0.),2.)*0.4, pow(max(color,0.),3.)*0.15 , 1.0);
 
-                    vec2 uv = vUv;
+                    //// Normalized pixel coordinates (from 0 to 1)
+                    //// vec2 uv = fragCoord/iResolution.xy;
 
-                    vec3 normal = bumpMap(uv * vec2(1.0, 0.3) + vec2(-0.01, -0.3) * u_time * 2.0);
+                    // vec2 uv = vUv;
+
+                    // vec3 normal = bumpMap(uv * vec2(1.0, 0.3) + vec2(-0.01, -0.3) * u_time * 2.0);
     
-                    #ifdef DEBUG_NORMAL
-                      fragColor = vec4(normal, 1.0);
-                      return;
-                    #endif
+                    // #ifdef DEBUG_NORMAL
+                    //   fragColor = vec4(normal, 1.0);
+                    //   return;
+                    // #endif
                     
-                    vec2 displacement = clamp((normal.xy - .5) * 0.1, -1., 1.);
-                    uv += displacement; 
+                    // vec2 displacement = clamp((normal.xy - .5) * 0.1, -1., 1.);
+                    // uv += displacement; 
                     
-                    vec2 uvT = (uv * vec2(1.0, 0.5)) + u_time * 2.0 * vec2(-0.01, -0.5);
-                    float n = pow(fbm(8.0 * uvT), 1.0);    
+                    // vec2 uvT = (uv * vec2(1.0, 0.5)) + u_time * 2.0 * vec2(-0.01, -0.5);
+                    // float n = pow(fbm(8.0 * uvT), 1.0);    
                     
-                    float gradient = pow(1.0 - uv.y, 2.0) * 5.;
-                    float finalNoise = n * gradient;
+                    // float gradient = pow(1.0 - uv.y, 2.0) * 5.;
+                    // float finalNoise = n * gradient;
                     
-                    vec3 color = finalNoise * vec3(2.*n, 2.*n*n*n, n*n*n*n);
-                    fragColor = vec4(color, step(0.5, color.r));
-                 
-                  //   vec2 q = uv;
-                  //   q.x *= 5.;
-                  //   q.y *= 2.;
-                  //   float strength = floor(q.x+1.);
-                  //   float T3 = max(3.,1.25*strength)*u_time;
-                  //   q.x = mod(q.x,1.)-0.5;
-                  //   q.y -= 0.25;
-                  //   float n = fbm(strength*q - vec2(0,T3));
-                  //   float c = 1. - 16. * pow( max( 0., length(q*vec2(1.8+q.y*1.5,.75) ) - n * max( 0., q.y+.25 ) ),1.2 );
-                  //   float c1 = n * c * (1.5-pow(2.50*uv.y,4.));
-                  //   c1=clamp(c1,0.,1.);
-
-                  //   vec3 col = vec3(1.5*c1, 1.5*c1*c1*c1, c1*c1*c1*c1*c1*c1);
-                    
-                  // #ifdef BLUE_FLAME
-                  //   col = col.zyx;
-                  // #endif
-                  // #ifdef GREEN_FLAME
-                  //   col = 0.85*col.yxz;
-                  // #endif
-                    
-                  //   float a = c * (1.-pow(uv.y,3.));
-                  //   fragColor = vec4( mix(vec3(0.),col,a), a);
+                    // vec3 color = finalNoise * vec3(2.*n, 2.*n*n*n, n*n*n*n);
+                    // fragColor = vec4(color, step(0.5, color.r));
                 }
                  
                 void main() {
@@ -210,7 +224,7 @@
         const sphere = new THREE.Mesh(geometry, material)
         //sphere.rotation.y = Math.PI / 2
         sphere.rotation.z = Math.PI / 2
-        //sphere.position.x = -4
+        sphere.position.x = -2
         //sphere.position.y = 1
         scene.add(sphere)
 
@@ -252,6 +266,9 @@
               g.traverse(node => {
                 if(node.isMesh) node.castShadow = true
               })
+
+              g.rotation.y = Math.PI / 4
+              g.position.x = -2
 
               scene.add( g );
 
@@ -397,7 +414,7 @@
       //sphere.visible = true
       //sphere.layers.set(2)
       //sphere.position.y = -10000
-      sphere.rotation.y = -Math.PI / 2
+      sphere.rotation.y = -Math.PI / 4
       sphere.frustumCulled = false;
 
       let once = false
@@ -420,19 +437,28 @@
         TIME += 0.005;
         updateUniforms();
 
+        const timeForStartFirstFire = 0.45
 
-         if(TIME > 0.4){
-          sphere.position.z += 0.1//0.17
-          //sphere.visible = true
-          sphere.scale.set(1,1,1)
-        }else{
+
+        //  if(TIME > timeForStartFirstFire){
+        //   sphere.position.x += 0.13//0.17
+        //   sphere.position.z += 0.03//0.17
+        //   //sphere.visible = true
           
-        }
+        // }else{
+          
+        // }
 
-        if(TIME > 0.01 && TIME < 0.4){
-          //sphere.visible = false
-          sphere.scale.set(0,0,0)
-        }
+        // if(TIME > 0.01 && TIME < timeForStartFirstFire){
+        //   //sphere.visible = false
+        //   sphere.scale.set(0,0,0)
+        // }
+
+        // // scaling sphere
+        // if(TIME > timeForStartFirstFire && TIME < timeForStartFirstFire + 1){
+        //   const h = 0.3 + (TIME - timeForStartFirstFire) *6
+        //   sphere.scale.set(h,h,h)
+        // }
 
         console.log("render")
         renderer.render( scene, camera );
