@@ -2,12 +2,63 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shaders</title>
-    <link rel="stylesheet" href="./style.css">
+    <title>Three.js Scene</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
 </head>
 <body>
-    <canvas class="webgl"></canvas>
-    <script type="module" src="./script.js"></script>
+   <!--  <script src="https://threejs.org/build/three.js"></script>
+    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script> -->
+    <script type="module">
+        import * as THREE from "../three.module.js"
+        import { OrbitControls } from '../OrbitControls.js';
+        // Создаем основные компоненты сцены: сцену, камеру и рендерер
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Добавляем OrbitControls
+        const controls = new OrbitControls(camera, renderer.domElement);
+
+        // Создаем геометрию куба и материал с шейдером
+        const geometry = new THREE.BoxGeometry();
+        const material = new THREE.ShaderMaterial({
+            vertexShader: `
+                void main() {
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                void main() {
+                    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // красный цвет
+                }
+            `
+        });
+
+        // Создаем меш с использованием геометрии и материала
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+
+        // Камера на расстоянии, чтобы увидеть объекты
+        camera.position.z = 5;
+
+        // Функция для анимации сцены
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Обновляем контроллеры (если есть интерактивное движение)
+            controls.update();
+
+            // Рендеринг сцены и камеры
+            renderer.render(scene, camera);
+        }
+
+        // Запускаем анимацию
+        animate();
+    </script>
 </body>
 </html>
