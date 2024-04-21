@@ -30,19 +30,44 @@
             vertexShader: `
 
                 uniform float uTime; 
+                varying vec2 vUv;
+
+
+                float pseudoRandom(float seed) {
+                    return fract(sin(seed) * 43758.5453);
+                }
+                
+
+
+
+
                 void main() {
+                    vUv = uv;
                     vec3 newPosition = position;
-                    newPosition.x += sin(uTime);
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+
+
+                    // float noise = pseudoRandom(position.x + position.y + position.z);
+                    // vec3 displacedPosition = position + normal * noise;
+
+                    vec3 displacedPosition = position * vec3(2.0, 1.0, 1.0);
+                    
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
                 }
             `,
             fragmentShader: `
                 uniform float uTime; 
+                varying vec2 vUv;
+
+                float random (vec2 st) {
+                    return fract(sin(dot(st.xy,
+                                         vec2(12.9898,78.233)))*
+                        43758.5453123 * abs(sin(uTime)));
+                }
                 void main() {
 
+                    float rnd = random( vUv );
 
-
-                    gl_FragColor = vec4(abs(sin(uTime)), 0.8, 0.0, 1.0); // красный цвет
+                    gl_FragColor = vec4(vec3(rnd), 1.0); // красный цвет
                 }
             `,
             uniforms:{
