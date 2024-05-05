@@ -61,117 +61,150 @@
 
             uniforms: {
                 diffuse: { value: new THREE.Color(0xffffff) },
-                uTime: { type: "f", value: 0 },
+                u_time: { type: "f", value: 0 },
                 iResolution:  { value: new THREE.Vector3() },
-                uFrequency:  { type: "f", value: 0 },
             },
             vertexShader: `
-                uniform float uTime; 
-                uniform float uFrequency;
+                uniform float u_time;
+
                 varying vec2 vUv;
-                varying vec3 vPosition;
-                varying float vNoise;
-
-
-
-                float pseudoRandom(float seed) {
-                    return fract(sin(seed) * 43758.5453);
-                }
-
-                float noise(vec3 point) {
-                    float dt = dot(point, vec3(12.9898, 78.233, 123.45));
-                    float sn = (sin(dt) * 43758.5453123);
-                    return fract(sn);
-                }
-                
-
-
-
 
                 void main() {
                     vUv = uv;
-                    
 
-                    // Пламенная анимация
-                    float noiseFactor = noise(position + uTime);
+                    // vec3 delta = normal * sin(position.x * position.y * u_time / 10.0);
+                    // vec3 newPosition = position + delta;
 
-                    //scale
-                    vec3 pos = position * 0.4;
-                    
-                    // Манипулирование вершинами на конце (вдоль положительного Y)
-                    if (pos.y > uFrequency) {
-                        pos.x += sin(uTime + pos.y) * (noiseFactor - 0.5) * 5.0;
-                        pos.y += noiseFactor * 5.0;
-                        pos.z += cos(uTime + pos.y) * (noiseFactor - 0.5) * 5.0;
-                    }
-
-
-                    // to oval
-                    pos.y = pos.y * 0.4;
-
-                    //pos.x +=sin(.3 * pos.y + uTime*10.0) * 1.0;
-
-                    vNoise = noiseFactor * 1.5;
-
-                    vPosition = position;
-
-                    //gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-
-                    // vec3 newPosition = position;
-                     vec3 displacedPosition = pos * vec3(1.5, 8.0, 1.5);
-
-                    // sphere to rainDrop
-                     if (position.y > 0.0) {
-                        displacedPosition.y *= 1.5;
-                      }else{
-                        displacedPosition.y *= 0.5;
-                      }
-                    
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
-                }
-                `,
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }`,
             fragmentShader: `
-                uniform float uTime; 
+                uniform vec3 diffuse;
+                uniform float u_time;
+                uniform vec3 iResolution;
                 varying vec2 vUv;
-                varying float vNoise;
-                varying vec3 vPosition;
 
-                float random (vec2 st) {
-                    return fract(sin(dot(st.xy,
-                                         vec2(12.9898,78.233)))*
-                        43758.5453123 * abs(sin(uTime)));
+                vec2 hash( vec2 p )
+                {
+                  p = vec2( dot(p,vec2(127.1,311.7)),
+                       dot(p,vec2(269.5,183.3)) );
+                  return -1.0 + 2.0*fract(sin(p)*43758.5453123);
                 }
+
+                float noise( in vec2 p )
+                {
+                  const float K1 = 0.366025404; // (sqrt(3)-1)/2;
+                  const float K2 = 0.211324865; // (3-sqrt(3))/6;
+                  
+                  vec2 i = floor( p + (p.x+p.y)*K1 );
+                  
+                  vec2 a = p - i + (i.x+i.y)*K2;
+                  vec2 o = (a.x>a.y) ? vec2(1.0,0.0) : vec2(0.0,1.0);
+                  vec2 b = a - o + K2;
+                  vec2 c = a - 1.0 + 2.0*K2;
+                  
+                  vec3 h = max( 0.5-vec3(dot(a,a), dot(b,b), dot(c,c) ), 0.0 );
+                  
+                  vec3 n = h*h*h*h*vec3( dot(a,hash(i+0.0)), dot(b,hash(i+o)), dot(c,hash(i+1.0)));
+                  
+                  return dot( n, vec3(70.0) );
+                }
+
+                float fbm(vec2 uv)
+                {
+                  float f;
+                  mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
+                  f  = 0.5000*noise( uv ); uv = m*uv;
+                  f += 0.2500*noise( uv ); uv = m*uv;
+                  f += 0.1250*noise( uv ); uv = m*uv;
+                  f += 0.0625*noise( uv ); uv = m*uv;
+                  f = 0.5 + 0.5*f;
+                  return f;
+                }
+
+                vec3 bumpMap(vec2 uv) { 
+                    //vec2 uv = vUv;
+                    vec2 s = 1. / iResolution.xy;
+                    float p =  fbm(uv);
+                    float h1 = fbm(uv + s * vec2(1., 0));
+                    float v1 = fbm(uv + s * vec2(0, 1.));
+                       
+                    vec2 xy = (p - vec2(h1, v1)) * 40.0;
+                    return vec3(xy + .5, 1.);
+                }
+
+                float snoise(vec3 uv, float res)
+{
+  const vec3 s = vec3(1e0, 1e2, 1e3);
+  
+  uv *= res;
+  
+  vec3 uv0 = floor(mod(uv, res))*s;
+  vec3 uv1 = floor(mod(uv+vec3(1.), res))*s;
+  
+  vec3 f = fract(uv); f = f*f*(3.0-2.0*f);
+
+  vec4 v = vec4(uv0.x+uv0.y+uv0.z, uv1.x+uv0.y+uv0.z,
+              uv0.x+uv1.y+uv0.z, uv1.x+uv1.y+uv0.z);
+
+  vec4 r = fract(sin(v*1e-1)*1e3);
+  float r0 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+  
+  r = fract(sin((v + uv1.z - uv0.z)*1e-1)*1e3);
+  float r1 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+  
+  return mix(r0, r1, f.z)*2.-1.;
+}
+
+
+                void mainImage( out vec4 fragColor, in vec2 fragCoord )
+                {
+                    
+                    vec2 p = -.5 + fragCoord.xy / iResolution.xy;
+                    p.x *= iResolution.x/iResolution.y;
+                    
+                    float color = 3.0 - (3.*length(2.*p));
+                    
+                    vec3 coord = vec3(atan(p.x,p.y)/6.2832+.5, length(p)*.4, .5);
+                    
+                    for(int i = 1; i <= 7; i++)
+                    {
+                      float power = pow(2.0, float(i));
+                      color += (1.5 / power) * snoise(coord + vec3(0.,-u_time*.05, u_time*.01), power*16.);
+                    }
+                    fragColor = vec4( color, pow(max(color,0.),2.)*0.4, pow(max(color,0.),3.)*0.15 , 1.0);
+
+                    //// Normalized pixel coordinates (from 0 to 1)
+                    //// vec2 uv = fragCoord/iResolution.xy;
+
+                    // vec2 uv = vUv;
+
+                    // vec3 normal = bumpMap(uv * vec2(1.0, 0.3) + vec2(-0.01, -0.3) * u_time * 2.0);
+    
+                    // #ifdef DEBUG_NORMAL
+                    //   fragColor = vec4(normal, 1.0);
+                    //   return;
+                    // #endif
+                    
+                    // vec2 displacement = clamp((normal.xy - .5) * 0.1, -1., 1.);
+                    // uv += displacement; 
+                    
+                    // vec2 uvT = (uv * vec2(1.0, 0.5)) + u_time * 2.0 * vec2(-0.01, -0.5);
+                    // float n = pow(fbm(8.0 * uvT), 1.0);    
+                    
+                    // float gradient = pow(1.0 - uv.y, 2.0) * 5.;
+                    // float finalNoise = n * gradient;
+                    
+                    // vec3 color = finalNoise * vec3(2.*n, 2.*n*n*n, n*n*n*n);
+                    // fragColor = vec4(color, step(0.5, color.r));
+                }
+                 
                 void main() {
-
-                    float rnd = random( vUv );
-
-                    //gl_FragColor = vec4(vec3(rnd), 1.0); // красный цвет
-                    //gl_FragColor = vec4(vUv, vNoise, 1.0);
-
-                      // Высота относительно центра огня
-                    float heightFactor = smoothstep(0.0, 30.0, vPosition.y);
-
-                    // Определяем цвета для эффекта пламени
-                    vec3 colorBottom = vec3(1.0, 1.0, 0.0); // Желтый
-                    vec3 colorMiddle = vec3(1.0, 0.5, 0.0); // Оранжевый
-                    vec3 colorTop = vec3(1.0, 0.0, 0.0); // Красный
-
-                    // Смешиваем цвета, используя шум и высоту для создания эффекта пламени
-                    vec3 color = mix(colorBottom, colorMiddle, clamp(vNoise + 0.2, 0.0, 1.0));
-                    color = mix(color, colorTop, heightFactor);
-
-                    // Плавные переходы между цветами с точечным эффектом
-                    color *= (1.0 - heightFactor) + vNoise * heightFactor;
-
-                    gl_FragColor = vec4(color, 1.0);
-
+                  mainImage(gl_FragColor, gl_FragCoord.xy);
                 }
                 `
         });
         material.uniforms.diffuse.value = new THREE.Color(0,1,1);
-        material.uniforms.uTime.value = TIME
-        material.uniforms.uFrequency.value = 2.0
-
+        material.uniforms.u_time.value = TIME
         material.transparent = true;
         
         const mesh = new THREE.Mesh(cube, material)
@@ -352,12 +385,12 @@
               if (child instanceof THREE.Mesh
                   && child.material.type === 'ShaderMaterial') {
                   //console.log({TIME, time: child.material.uniforms})
-                  child.material.uniforms.uTime.value = TIME;
+                  child.material.uniforms.u_time.value = TIME;
                   resizeRendererToDisplaySize(renderer);
  
                   const canvas = renderer.domElement;
                   const plane = scene.children.find(child => child.name == "plane")
-                  //child.material.uniforms.iResolution.value.set(1000, 1000, 1);
+                  child.material.uniforms.iResolution.value.set(1000, 1000, 1);
                   child.material.needsUpdate = true;
               }
           });
@@ -407,26 +440,25 @@
         const timeForStartFirstFire = 0.45
 
 
-         if(TIME > timeForStartFirstFire){
-          sphere.position.x += 0.23//0.17
-          sphere.position.z += 0.03//0.17
-          //sphere.visible = true
+        //  if(TIME > timeForStartFirstFire){
+        //   sphere.position.x += 0.13//0.17
+        //   sphere.position.z += 0.03//0.17
+        //   //sphere.visible = true
           
-        }else{
+        // }else{
           
-        }
+        // }
 
-        if(TIME > 0.01 && TIME < timeForStartFirstFire){
-          //sphere.visible = false
-          sphere.scale.set(0,0,0)
-        }
+        // if(TIME > 0.01 && TIME < timeForStartFirstFire){
+        //   //sphere.visible = false
+        //   sphere.scale.set(0,0,0)
+        // }
 
-        // scaling sphere
-        if(TIME > timeForStartFirstFire && TIME < timeForStartFirstFire + 1){
-          const h = 0.3 + (TIME - timeForStartFirstFire) *6
-          //sphere.scale.set(h,h,h)
-          sphere.scale.set(1,1,1)
-        }
+        // // scaling sphere
+        // if(TIME > timeForStartFirstFire && TIME < timeForStartFirstFire + 1){
+        //   const h = 0.3 + (TIME - timeForStartFirstFire) *6
+        //   sphere.scale.set(h,h,h)
+        // }
 
         console.log("render")
         renderer.render( scene, camera );
