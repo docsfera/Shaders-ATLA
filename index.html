@@ -27,6 +27,11 @@
       let camera, scene, renderer;
       let TIME = 0
 
+      let isStartAnimation = false
+      let spendedTimeBeforeGoStart = 0
+
+      document.addEventListener("mousedown", () => isStartAnimation = true)
+
       init();
       //render();
 
@@ -64,10 +69,12 @@
                 uTime: { type: "f", value: 0 },
                 iResolution:  { value: new THREE.Vector3() },
                 uFrequency:  { type: "f", value: 0 },
+                uScaleY: { type: "f", value: 0.1 },
             },
             vertexShader: `
                 uniform float uTime; 
                 uniform float uFrequency;
+                uniform float uScaleY;
                 varying vec2 vUv;
                 varying vec3 vPosition;
                 varying float vNoise;
@@ -94,9 +101,9 @@
 
                     // Пламенная анимация
                     float noiseFactor = noise(position + uTime);
-
-                    //scale
-                    vec3 pos = position * 0.4;
+                    vec3 pos = position * 0.3;
+                    pos.x = pos.x * 0.5;
+                    pos.y = pos.y * uScaleY;
                     
                     // Манипулирование вершинами на конце (вдоль положительного Y)
                     if (pos.y > uFrequency) {
@@ -105,11 +112,7 @@
                         pos.z += cos(uTime + pos.y) * (noiseFactor - 0.5) * 5.0;
                     }
 
-
-                    // to oval
-                    pos.y = pos.y * 0.4;
-
-                    //pos.x +=sin(.3 * pos.y + uTime*10.0) * 1.0;
+                    pos.x +=sin(.3 * pos.y + uTime*20.0) * 0.05;
 
                     vNoise = noiseFactor * 1.5;
 
@@ -119,13 +122,6 @@
 
                     // vec3 newPosition = position;
                      vec3 displacedPosition = pos * vec3(1.5, 8.0, 1.5);
-
-                    // sphere to rainDrop
-                     if (position.y > 0.0) {
-                        displacedPosition.y *= 1.5;
-                      }else{
-                        displacedPosition.y *= 0.5;
-                      }
                     
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
                 }
@@ -144,9 +140,6 @@
                 void main() {
 
                     float rnd = random( vUv );
-
-                    //gl_FragColor = vec4(vec3(rnd), 1.0); // красный цвет
-                    //gl_FragColor = vec4(vUv, vNoise, 1.0);
 
                       // Высота относительно центра огня
                     float heightFactor = smoothstep(0.0, 30.0, vPosition.y);
@@ -191,8 +184,8 @@
         const sphere = new THREE.Mesh(geometry, material)
         //sphere.rotation.y = Math.PI / 2
         sphere.rotation.z = Math.PI / 2
-        sphere.position.x = -2
-        //sphere.position.y = 1
+        sphere.position.x = -0.4
+        sphere.position.y = 0.1
         scene.add(sphere)
 
         console.log(camera.position)
@@ -214,7 +207,7 @@
         const backgrondPlane = new THREE.Mesh(backgrondPlaneGeometry, backgrondPlaneMaterial)
         backgrondPlane.position.x = 0
         backgrondPlane.position.y = 0
-        //backgrondPlane.position.z = -1
+        backgrondPlane.position.z = -1
 
         backgrondPlane.receiveShadow = true;
 
@@ -381,7 +374,7 @@
       //sphere.visible = true
       //sphere.layers.set(2)
       //sphere.position.y = -10000
-      sphere.rotation.y = -Math.PI / 4
+      //sphere.rotation.y = -Math.PI / 4
       sphere.frustumCulled = false;
 
       let once = false
@@ -389,28 +382,42 @@
       function render() {
 
 
+        TIME += 0.005;
 
+        // if(TIME > 1.2){
+        //   isStartAnimation = true
+        // }
 
-        if(animationAction){
+        if(animationAction && isStartAnimation){
           mixer.update(clock.getDelta()) // THIS IS ANIMATION
          // console.log("play")
           animationAction.play()
+        }
+
+        if(!isStartAnimation){
+          spendedTimeBeforeGoStart = TIME
         }
 
         requestAnimationFrame(render)
 
         
         
-        TIME += 0.005;
+        
         updateUniforms();
 
-        const timeForStartFirstFire = 0.45
+        const timeForStartFirstFire = 0.2
 
 
-         if(TIME > timeForStartFirstFire){
-          sphere.position.x += 0.23//0.17
-          sphere.position.z += 0.03//0.17
-          //sphere.visible = true
+         if(TIME > timeForStartFirstFire + spendedTimeBeforeGoStart){
+          sphere.position.x += 0.4
+
+          //material.uniforms.uScaleY.value = 1.4
+          if(material.uniforms.uScaleY.value < 1.4){
+            material.uniforms.uScaleY.value = material.uniforms.uScaleY.value + 0.4
+          }
+          
+
+          //material.uniforms.uScaleY.value = material.uniforms.uScaleY.value + 0.1
           
         }else{
           
@@ -422,7 +429,8 @@
         }
 
         // scaling sphere
-        if(TIME > timeForStartFirstFire && TIME < timeForStartFirstFire + 1){
+        //console.log({TIME, spendedTimeBeforeGoStart, timeForStartFirstFire})
+        if(TIME > spendedTimeBeforeGoStart + timeForStartFirstFire  && isStartAnimation){
           const h = 0.3 + (TIME - timeForStartFirstFire) *6
           //sphere.scale.set(h,h,h)
           sphere.scale.set(1,1,1)
