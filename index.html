@@ -30,10 +30,11 @@
       let isStartAnimation = false
       let spendedTimeBeforeGoStart = 0
 
+      const timeForStartFirstFire = 0.2
+
       document.addEventListener("mousedown", () => isStartAnimation = true)
 
       init();
-      //render();
 
 
 
@@ -60,7 +61,6 @@
 
         let animationAction, mixer;
 
-        const cube = new THREE.BoxGeometry(0.5,0.5,0.5)
         const material = new THREE.ShaderMaterial({
           side:THREE.DoubleSide,
 
@@ -165,12 +165,7 @@
         material.uniforms.uTime.value = TIME
         material.uniforms.uFrequency.value = 2.0
 
-        material.transparent = true;
-        
-        const mesh = new THREE.Mesh(cube, material)
-        mesh.position.x = -2
-        //scene.add(mesh)
-
+        material.transparent = true
 
         const planeGeometry = new THREE.PlaneGeometry(3,3,3)
         const geometry = new THREE.SphereGeometry( 0.4, 32, 32 ); 
@@ -182,17 +177,14 @@
 
 
         const sphere = new THREE.Mesh(geometry, material)
-        //sphere.rotation.y = Math.PI / 2
         sphere.rotation.z = Math.PI / 2
         sphere.position.x = -0.4
         sphere.position.y = 0.1
         scene.add(sphere)
 
-        console.log(camera.position)
         camera.position.set(0,0,5)
 
         const backgrondPlaneGeometry = new THREE.PlaneGeometry(12,4.2)
-        //const backgrondPlaneMaterial = new THREE.StandardMaterial({color: "#ffffff"}) 
         
 
         const loader = new THREE.TextureLoader();
@@ -230,11 +222,7 @@
               g.rotation.y = Math.PI / 4
               g.position.x = -2
 
-              scene.add( g );
-
-              console.log({gltf})
-
-              console.log(scene)
+              scene.add( g )
               scene.children[2].position.z = 0.5
               scene.children[2].position.y = -1
 
@@ -247,141 +235,88 @@
               light.shadow.camera.far = cameraFar;
 
 
-             light.position.z = 400
-             light.position.x = 200
-             light.position.y = 100
+              light.position.z = 400
+              light.position.x = 200
+              light.position.y = 100
 
               //light.intensity = 2
-              scene.add( light );
+              scene.add( light )
 
 
               const light2 = new THREE.AmbientLight( 0xffffff );
               light2.intensity = 0.8
               scene.add( light2 );
 
-              
-
+            
               mixer = new AnimationMixer(gltf.scene)
-
-              console.log({mixer})
 
               animationAction = mixer.clipAction(gltf.animations[0])
               animationAction.setLoop(THREE.LoopOnce);
               animationAction.clampWhenFinished = true;
               animationAction.enable = true;
 
-              console.log(animationAction)
+              render()
 
+            })
 
-              
-
-              
-
-
-              render();
-
-            } );
-
-        //scene.add(plane)
-
-        // new RGBELoader()
-        //   .load( 'environment.hdr', function ( texture ) {
-
-        //     texture.mapping = THREE.EquirectangularReflectionMapping;
-
-        //     scene.background = texture;
-        //     scene.environment = texture;
-
-        //     render();
-
-        //     // model
-
-        //     // const loader = new GLTFLoader();
-        //     // loader.load( 'suzanne.gltf', function ( gltf ) {
-
-        //     //   scene.add( gltf.scene );
-
-        //     //   render();
-
-        //     // } );
-
-        //   } );
-
-
-        
-
-        renderer = new THREE.WebGLRenderer();
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.BasicShadowMap;
-        renderer.setPixelRatio( window.devicePixelRatio );
-        renderer.setSize( window.innerWidth, window.innerHeight );
+        renderer = new THREE.WebGLRenderer()
+        renderer.shadowMap.enabled = true
+        renderer.shadowMap.type = THREE.BasicShadowMap
+        renderer.setPixelRatio( window.devicePixelRatio )
+        renderer.setSize( window.innerWidth, window.innerHeight )
         // renderer.toneMapping = THREE.ACESFilmicToneMapping;
         // renderer.toneMappingExposure = 1;
         // renderer.outputEncoding = THREE.sRGBEncoding;
         container.appendChild( renderer.domElement );
 
         const controls = new OrbitControls( camera, renderer.domElement );
-        //controls.addEventListener( 'change', render ); // use if there is no animation loop
         controls.minDistance = 2;
         controls.maxDistance = 40;
         controls.target.set( 0, 0, - 0.2 );
         controls.update();
 
-        window.addEventListener( 'resize', onWindowResize );
+        window.addEventListener( 'resize', onWindowResize )
 
-              function resizeRendererToDisplaySize(renderer) {
-        const canvas = renderer.domElement;
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
-        const needResize = canvas.width !== width || canvas.height !== height;
+      function resizeRendererToDisplaySize(renderer) {
+        const canvas = renderer.domElement
+        const width = canvas.clientWidth
+        const height = canvas.clientHeight
+        const needResize = canvas.width !== width || canvas.height !== height
         if (needResize) {
-          renderer.setSize(width, height, false);
+          renderer.setSize(width, height, false)
         }
-        return needResize;
+        return needResize
       }
 
       function updateUniforms() {
-          scene.traverse((child) => {
-              if (child instanceof THREE.Mesh
-                  && child.material.type === 'ShaderMaterial') {
-                  //console.log({TIME, time: child.material.uniforms})
-                  child.material.uniforms.uTime.value = TIME;
-                  resizeRendererToDisplaySize(renderer);
+        scene.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material.type === 'ShaderMaterial') {
+            child.material.uniforms.uTime.value = TIME
+            resizeRendererToDisplaySize(renderer)
  
-                  const canvas = renderer.domElement;
-                  const plane = scene.children.find(child => child.name == "plane")
-                  //child.material.uniforms.iResolution.value.set(1000, 1000, 1);
-                  child.material.needsUpdate = true;
-              }
-          });
-          
-        }
+            const canvas = renderer.domElement
+            const plane = scene.children.find(child => child.name == "plane")
+            child.material.needsUpdate = true;
+          }
+        })       
+      }
 
       function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight
+        camera.updateProjectionMatrix()
 
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
+        renderer.setSize( window.innerWidth, window.innerHeight )
 
-        renderer.setSize( window.innerWidth, window.innerHeight );
-
-        render();
+        render()
 
       }
 
-      //
-
       const clock = new THREE.Clock()
-      //sphere.visible = true
-      //sphere.layers.set(2)
-      //sphere.position.y = -10000
-      //sphere.rotation.y = -Math.PI / 4
       sphere.frustumCulled = false;
 
       let once = false
 
       function render() {
-
-
         TIME += 0.005;
 
         // if(TIME > 1.2){
@@ -390,7 +325,6 @@
 
         if(animationAction && isStartAnimation){
           mixer.update(clock.getDelta()) // THIS IS ANIMATION
-         // console.log("play")
           animationAction.play()
         }
 
@@ -399,25 +333,14 @@
         }
 
         requestAnimationFrame(render)
+        updateUniforms()
 
-        
-        
-        
-        updateUniforms();
-
-        const timeForStartFirstFire = 0.2
-
-
-         if(TIME > timeForStartFirstFire + spendedTimeBeforeGoStart){
+        if(TIME > timeForStartFirstFire + spendedTimeBeforeGoStart){
           sphere.position.x += 0.4
 
-          //material.uniforms.uScaleY.value = 1.4
           if(material.uniforms.uScaleY.value < 1.4){
             material.uniforms.uScaleY.value = material.uniforms.uScaleY.value + 0.4
           }
-          
-
-          //material.uniforms.uScaleY.value = material.uniforms.uScaleY.value + 0.1
           
         }else{
           
@@ -429,17 +352,12 @@
         }
 
         // scaling sphere
-        //console.log({TIME, spendedTimeBeforeGoStart, timeForStartFirstFire})
         if(TIME > spendedTimeBeforeGoStart + timeForStartFirstFire  && isStartAnimation){
           const h = 0.3 + (TIME - timeForStartFirstFire) *6
           //sphere.scale.set(h,h,h)
           sphere.scale.set(1,1,1)
         }
-
-        console.log("render")
-        renderer.render( scene, camera );
-        
-
+        renderer.render( scene, camera )
       }
 
       render()
