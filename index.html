@@ -17,6 +17,8 @@
 
       import * as THREE from './three.module.js';
 
+      import {firstFireVertexShader, firstFireFragmentShader} from './shaders/firstFireMaterial.js'
+
       import { OrbitControls } from './OrbitControls.js';
       import { GLTFLoader } from './GLTFLoader.js';
       import {TextureLoader} from "./three/src/loaders/TextureLoader.js"
@@ -30,7 +32,13 @@
       let isStartAnimation = false
       let spendedTimeBeforeGoStart = 0
 
+      let torus
+
       const timeForStartFirstFire = 0.2
+      const timeForStartTorusFire = 0.5
+
+
+      let acseleration = 0
 
       document.addEventListener("mousedown", () => isStartAnimation = true)
 
@@ -63,7 +71,6 @@
 
         const material = new THREE.ShaderMaterial({
           side:THREE.DoubleSide,
-
             uniforms: {
                 diffuse: { value: new THREE.Color(0xffffff) },
                 uTime: { type: "f", value: 0 },
@@ -71,96 +78,9 @@
                 uFrequency:  { type: "f", value: 0 },
                 uScaleY: { type: "f", value: 0.1 },
             },
-            vertexShader: `
-                uniform float uTime; 
-                uniform float uFrequency;
-                uniform float uScaleY;
-                varying vec2 vUv;
-                varying vec3 vPosition;
-                varying float vNoise;
-
-
-
-                float pseudoRandom(float seed) {
-                    return fract(sin(seed) * 43758.5453);
-                }
-
-                float noise(vec3 point) {
-                    float dt = dot(point, vec3(12.9898, 78.233, 123.45));
-                    float sn = (sin(dt) * 43758.5453123);
-                    return fract(sn);
-                }
-                
-
-
-
-
-                void main() {
-                    vUv = uv;
-                    
-
-                    // Пламенная анимация
-                    float noiseFactor = noise(position + uTime);
-                    vec3 pos = position * 0.3;
-                    pos.x = pos.x * 0.5;
-                    pos.y = pos.y * uScaleY;
-                    
-                    // Манипулирование вершинами на конце (вдоль положительного Y)
-                    if (pos.y > uFrequency) {
-                        pos.x += sin(uTime + pos.y) * (noiseFactor - 0.5) * 5.0;
-                        pos.y += noiseFactor * 5.0;
-                        pos.z += cos(uTime + pos.y) * (noiseFactor - 0.5) * 5.0;
-                    }
-
-                    pos.x +=sin(.3 * pos.y + uTime*20.0) * 0.05;
-
-                    vNoise = noiseFactor * 1.5;
-
-                    vPosition = position;
-
-                    //gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-
-                    // vec3 newPosition = position;
-                     vec3 displacedPosition = pos * vec3(1.5, 8.0, 1.5);
-                    
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
-                }
-                `,
-            fragmentShader: `
-                uniform float uTime; 
-                varying vec2 vUv;
-                varying float vNoise;
-                varying vec3 vPosition;
-
-                float random (vec2 st) {
-                    return fract(sin(dot(st.xy,
-                                         vec2(12.9898,78.233)))*
-                        43758.5453123 * abs(sin(uTime)));
-                }
-                void main() {
-
-                    float rnd = random( vUv );
-
-                      // Высота относительно центра огня
-                    float heightFactor = smoothstep(0.0, 30.0, vPosition.y);
-
-                    // Определяем цвета для эффекта пламени
-                    vec3 colorBottom = vec3(1.0, 1.0, 0.0); // Желтый
-                    vec3 colorMiddle = vec3(1.0, 0.5, 0.0); // Оранжевый
-                    vec3 colorTop = vec3(1.0, 0.0, 0.0); // Красный
-
-                    // Смешиваем цвета, используя шум и высоту для создания эффекта пламени
-                    vec3 color = mix(colorBottom, colorMiddle, clamp(vNoise + 0.2, 0.0, 1.0));
-                    color = mix(color, colorTop, heightFactor);
-
-                    // Плавные переходы между цветами с точечным эффектом
-                    color *= (1.0 - heightFactor) + vNoise * heightFactor;
-
-                    gl_FragColor = vec4(color, 1.0);
-
-                }
-                `
-        });
+            vertexShader: firstFireVertexShader,
+            fragmentShader: firstFireFragmentShader
+        })
         material.uniforms.diffuse.value = new THREE.Color(0,1,1);
         material.uniforms.uTime.value = TIME
         material.uniforms.uFrequency.value = 2.0
@@ -205,6 +125,9 @@
 
 
         scene.add(backgrondPlane)
+
+
+        
 
 
 
@@ -255,9 +178,102 @@
               animationAction.clampWhenFinished = true;
               animationAction.enable = true;
 
+              ///  WTF
+
+              const geometry2 = new THREE.TorusGeometry(0.3, 0.1, 8, 16, Math.PI)
+              //const material2 = new THREE.MeshBasicMaterial({color: 0xffff00 })
+
+              const material2 = new THREE.ShaderMaterial({
+                side:THREE.DoubleSide,
+                  uniforms: {
+                      uTime: { type: "f", value: 0 },
+                      uTimeForStartTorusFire: { type: "f", value: timeForStartTorusFire },
+                      uSpendedTimeBeforeGoStart: { type: "f", value: spendedTimeBeforeGoStart },
+                      
+                  },
+                  transparent: true,
+                  vertexShader: `
+                  uniform float uTime;
+                  varying vec2 vUv;
+                  varying vec3 vPosition;
+                  varying float vNoise;
+
+                  float pseudoRandom(float seed) {
+                    return fract(sin(seed) * 43758.5453);
+                  }
+
+                  float noise(vec3 point) {
+                    float dt = dot(point, vec3(12.9898, 78.233, 123.45));
+                    float sn = (sin(dt) * 43758.5453123);
+                    return fract(sn);
+                  }
+
+                  void main() {
+                    vUv = uv;
+                    vPosition = position;
+
+                    float noiseFactor = noise(position + uTime);
+                    vNoise = noiseFactor * 1.5;
+
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                  }
+
+                  `,
+                  fragmentShader: `
+                  uniform float uTime; 
+                  uniform float uTimeForStartTorusFire;
+                  uniform float uSpendedTimeBeforeGoStart;
+                  varying vec2 vUv;
+                  varying vec3 vPosition;
+                  varying float vNoise;
+
+                  float random (vec2 st) {
+                    return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.5453123 * abs(sin(uTime)));
+                  }
+
+                  void main() {
+
+                    float rnd = random( vUv );
+
+                    // Высота относительно центра огня
+                    float heightFactor = smoothstep(0.0, 30.0, vPosition.y);
+
+                    // Определяем цвета для эффекта пламени
+                    vec3 colorBottom = vec3(1.0, 1.0, 0.0); // Желтый
+                    vec3 colorMiddle = vec3(1.0, 0.5, 0.0); // Оранжевый
+                    vec3 colorTop = vec3(1.0, 0.0, 0.0); // Красный
+
+                    // Смешиваем цвета, используя шум и высоту для создания эффекта пламени
+                    vec3 color = mix(colorBottom, colorMiddle, clamp(vNoise + 0.2, 0.0, 1.0));
+                    color = mix(color, colorTop, heightFactor);
+
+                    // Плавные переходы между цветами с точечным эффектом
+                    color *= (1.0 - heightFactor) + vNoise * heightFactor;
+
+                    float alpha = 0.0;
+                    if(vUv.x < (uTime - uSpendedTimeBeforeGoStart - uTimeForStartTorusFire) * 10.0){
+                      alpha = 1.0;
+                    }
+
+                    gl_FragColor = vec4(color, alpha);
+                    
+                  }`
+              })
+
+
+              torus = new THREE.Mesh(geometry2, material2)
+
+              scene.add(torus)
+
+              torus.rotation.z = -Math.PI / 2
+              torus.rotation.x = Math.PI + Math.PI / 2 + Math.PI  / 6
+              torus.rotation.y = -Math.PI / 8
+
+              torus.position.x = -0.5
+
               render()
 
-            })
+          })
 
         renderer = new THREE.WebGLRenderer()
         renderer.shadowMap.enabled = true
@@ -290,7 +306,7 @@
 
       function updateUniforms() {
         scene.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.material.type === 'ShaderMaterial') {
+          if (child instanceof THREE.Mesh && child.material.type === 'ShaderMaterial' && child.material.uniforms.uTime) {
             child.material.uniforms.uTime.value = TIME
             resizeRendererToDisplaySize(renderer)
  
@@ -325,11 +341,13 @@
 
         if(animationAction && isStartAnimation){
           mixer.update(clock.getDelta()) // THIS IS ANIMATION
+
           animationAction.play()
         }
 
         if(!isStartAnimation){
           spendedTimeBeforeGoStart = TIME
+          torus.material.uniforms.uSpendedTimeBeforeGoStart.value = TIME
         }
 
         requestAnimationFrame(render)
@@ -346,9 +364,32 @@
           
         }
 
+        if(TIME > timeForStartTorusFire + spendedTimeBeforeGoStart){
+
+          
+          //acseleration += 0.002
+
+          torus.position.x += 0.07 + acseleration
+          torus.position.y += 0.035 + acseleration
+
+          if(torus.scale.x < 5){
+            torus.scale.x += 0.125
+            torus.scale.y += 0.125
+            torus.scale.z += 0.05
+          }
+          
+
+
+        }
+
+        // torus.scale.x += 0.01
+        // torus.scale.y += 0.01
+        // torus.scale.z += 0.01
+
         if(TIME > 0.01 && TIME < timeForStartFirstFire){
           //sphere.visible = false
           sphere.scale.set(0,0,0)
+          torus.scale.set(0,0,0)
         }
 
         // scaling sphere
@@ -357,6 +398,14 @@
           //sphere.scale.set(h,h,h)
           sphere.scale.set(1,1,1)
         }
+
+        if(TIME > spendedTimeBeforeGoStart + timeForStartTorusFire  && isStartAnimation){
+          const h = 0.3 + (TIME - timeForStartTorusFire) *6
+          //sphere.scale.set(h,h,h)
+          //torus.scale.set(1,1,1)
+        }
+
+
         renderer.render( scene, camera )
       }
 
