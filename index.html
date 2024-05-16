@@ -126,11 +126,6 @@
 
         scene.add(backgrondPlane)
 
-
-        
-
-
-
          const loader2 = new GLTFLoader();
             loader2.load( 'zuko2.gltf', function ( gltf ) {
               const g = gltf.scene
@@ -261,6 +256,7 @@
               })
 
 
+
               torus = new THREE.Mesh(geometry2, material2)
 
               scene.add(torus)
@@ -272,7 +268,6 @@
               torus.position.x = -0.5
 
               render()
-
           })
 
         renderer = new THREE.WebGLRenderer()
