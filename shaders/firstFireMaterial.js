@@ -48,8 +48,6 @@ const firstFireVertexShader = `
         gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
     }
 `
-
-
 const firstFireFragmentShader = `
                 uniform float uTime; 
                 varying vec2 vUv;
@@ -83,4 +81,71 @@ const firstFireFragmentShader = `
                 }
                 `
 
-export {firstFireVertexShader, firstFireFragmentShader}
+const torusFireVertexShader = `
+                  uniform float uTime;
+                  varying vec2 vUv;
+                  varying vec3 vPosition;
+                  varying float vNoise;
+
+                  float pseudoRandom(float seed) {
+                    return fract(sin(seed) * 43758.5453);
+                  }
+
+                  float noise(vec3 point) {
+                    float dt = dot(point, vec3(12.9898, 78.233, 123.45));
+                    float sn = (sin(dt) * 43758.5453123);
+                    return fract(sn);
+                  }
+
+                  void main() {
+                    vUv = uv;
+                    vPosition = position;
+
+                    float noiseFactor = noise(position + uTime);
+                    vNoise = noiseFactor * 1.5;
+
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                  }
+
+                  `
+const torusFireFragmentShader = `
+                  uniform float uTime; 
+                  uniform float uTimeForStartTorusFire;
+                  uniform float uSpendedTimeBeforeGoStart;
+                  varying vec2 vUv;
+                  varying vec3 vPosition;
+                  varying float vNoise;
+
+                  float random (vec2 st) {
+                    return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.5453123 * abs(sin(uTime)));
+                  }
+
+                  void main() {
+
+                    float rnd = random( vUv );
+
+                    // Высота относительно центра огня
+                    float heightFactor = smoothstep(0.0, 30.0, vPosition.y);
+
+                    // Определяем цвета для эффекта пламени
+                    vec3 colorBottom = vec3(1.0, 1.0, 0.0); // Желтый
+                    vec3 colorMiddle = vec3(1.0, 0.5, 0.0); // Оранжевый
+                    vec3 colorTop = vec3(1.0, 0.0, 0.0); // Красный
+
+                    // Смешиваем цвета, используя шум и высоту для создания эффекта пламени
+                    vec3 color = mix(colorBottom, colorMiddle, clamp(vNoise + 0.2, 0.0, 1.0));
+                    color = mix(color, colorTop, heightFactor);
+
+                    // Плавные переходы между цветами с точечным эффектом
+                    color *= (1.0 - heightFactor) + vNoise * heightFactor;
+
+                    float alpha = 0.0;
+                    if(vUv.x < (uTime - uSpendedTimeBeforeGoStart - uTimeForStartTorusFire) * 10.0){
+                      alpha = 1.0;
+                    }
+
+                    gl_FragColor = vec4(color, alpha);
+                    
+                  }`
+
+export {firstFireVertexShader, firstFireFragmentShader, torusFireVertexShader, torusFireFragmentShader}

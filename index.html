@@ -13,11 +13,9 @@
 
   <body>
     <script type="module">
-
-
       import * as THREE from './three.module.js';
 
-      import {firstFireVertexShader, firstFireFragmentShader} from './shaders/firstFireMaterial.js'
+      import {firstFireVertexShader, firstFireFragmentShader,torusFireVertexShader, torusFireFragmentShader} from './shaders/firstFireMaterial.js'
 
       import { OrbitControls } from './OrbitControls.js';
       import { GLTFLoader } from './GLTFLoader.js';
@@ -26,7 +24,8 @@
       //import { GLTFExporter } from './three/addons/exporters/GLTFExporter.js';
       //import { RGBELoader } from './RGBELoader.js';
 
-      let camera, scene, renderer;
+      let camera, scene, renderer
+      let animationAction, mixer
       let TIME = 0
 
       let isStartAnimation = false
@@ -42,34 +41,58 @@
 
       document.addEventListener("mousedown", () => isStartAnimation = true)
 
-      init();
-
-
+      init()
 
       function init() {
+        /* ############### SCENE INIT ############### */
+        const container = document.createElement("div")
+        document.body.appendChild( container )
+        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 20 )
+        //camera.position.set( - 1.8, 0.6, 2.7 )
+        camera.position.set(0,0,5)
+        scene = new THREE.Scene()
 
-        const container = document.createElement( 'div' );
-        document.body.appendChild( container );
+        /* ############### LIGHT ############### */
+        const light =  new THREE.DirectionalLight("#ffffff", 0.2)
+        var cameraNear = 1, cameraFar = 5000
+        light.castShadow = true
+        light.shadow.mapSize.width = 4024
+        light.shadow.mapSize.height = 4024
+        light.shadow.camera.near = cameraNear
+        light.shadow.camera.far = cameraFar
 
-        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 20 );
-        camera.position.set( - 1.8, 0.6, 2.7 );
+        light.position.z = 400
+        light.position.x = 200
+        light.position.y = 100
 
-        scene = new THREE.Scene();
+        //light.intensity = 2
+        scene.add(light)
 
+        const light2 = new THREE.AmbientLight( 0xffffff )
+        light2.intensity = 0.8
+        scene.add(light2)
 
+        /* ############### BACKGROUND PLANE ############### */
+        const backgroundPlaneGeometry = new THREE.PlaneGeometry(12,4.2)
+        const loader = new THREE.TextureLoader()
+        const texture = loader.load("./background.jpg")
+        //texture.colorSpace = THREE.SRGBColorSpace;
+         
+        const backgroundPlaneMaterial = new THREE.MeshPhongMaterial({
+          color: 0xFF8844,
+          map: texture,
+        });
 
-//         const light = new THREE.PointLight( 0xff0000, 1, 100 );
-// light.position.set( 50, 50, 50 );
-// scene.add( light );
+        const backgrondPlane = new THREE.Mesh(backgroundPlaneGeometry, backgroundPlaneMaterial)
+        backgrondPlane.position.x = 0
+        backgrondPlane.position.y = 0
+        backgrondPlane.position.z = -1
 
-//         const color = 0xFFFFFF;
-// const intensity = 1;
-// const light = new THREE.AmbientLight(color, intensity);
-// scene.add(light);
+        backgrondPlane.receiveShadow = true;
+        scene.add(backgrondPlane)
 
-        let animationAction, mixer;
-
-        const material = new THREE.ShaderMaterial({
+        /* ############### FIRST FIRE BALL ############### */
+        const firstFireBallMaterial = new THREE.ShaderMaterial({
           side:THREE.DoubleSide,
             uniforms: {
                 diffuse: { value: new THREE.Color(0xffffff) },
@@ -81,335 +104,181 @@
             vertexShader: firstFireVertexShader,
             fragmentShader: firstFireFragmentShader
         })
-        material.uniforms.diffuse.value = new THREE.Color(0,1,1);
-        material.uniforms.uTime.value = TIME
-        material.uniforms.uFrequency.value = 2.0
+        firstFireBallMaterial.uniforms.diffuse.value = new THREE.Color(0,1,1);
+        firstFireBallMaterial.uniforms.uTime.value = TIME
+        firstFireBallMaterial.uniforms.uFrequency.value = 2.0
 
-        material.transparent = true
+        firstFireBallMaterial.transparent = true
 
         const planeGeometry = new THREE.PlaneGeometry(3,3,3)
-        const geometry = new THREE.SphereGeometry( 0.4, 32, 32 ); 
+        const firstFireBallGeometry = new THREE.SphereGeometry( 0.4, 32, 32 ); 
 
-
-        const plane = new THREE.Mesh(planeGeometry, material)
-        plane.name = "plane"
-        plane.position.x = 2
-
-
-        const sphere = new THREE.Mesh(geometry, material)
+        const sphere = new THREE.Mesh(firstFireBallGeometry, firstFireBallMaterial)
         sphere.rotation.z = Math.PI / 2
         sphere.position.x = -0.4
         sphere.position.y = 0.1
         scene.add(sphere)
 
-        camera.position.set(0,0,5)
-
-        const backgrondPlaneGeometry = new THREE.PlaneGeometry(12,4.2)
-        
-
-        const loader = new THREE.TextureLoader();
-        const texture = loader.load( './background.jpg' );
-        //texture.colorSpace = THREE.SRGBColorSpace;
-         
-        const backgrondPlaneMaterial = new THREE.MeshPhongMaterial({
-          color: 0xFF8844,
-          map: texture,
-        });
-
-        const backgrondPlane = new THREE.Mesh(backgrondPlaneGeometry, backgrondPlaneMaterial)
-        backgrondPlane.position.x = 0
-        backgrondPlane.position.y = 0
-        backgrondPlane.position.z = -1
-
-        backgrondPlane.receiveShadow = true;
-
-
-        scene.add(backgrondPlane)
-
-         const loader2 = new GLTFLoader();
-            loader2.load( 'zuko2.gltf', function ( gltf ) {
-              const g = gltf.scene
-              g.castShadow = true;
-              g.receiveShadow = true;
-
-
-              g.traverse(node => {
-                if(node.isMesh) node.castShadow = true
-              })
-
-              g.rotation.y = Math.PI / 4
-              g.position.x = -2
-
-              scene.add( g )
-              scene.children[2].position.z = 0.5
-              scene.children[2].position.y = -1
-
-              const light =  new THREE.DirectionalLight("#ffffff", 0.2);
-              var cameraNear = 1, cameraFar = 5000;
-              light.castShadow = true;
-              light.shadow.mapSize.width = 4024;
-              light.shadow.mapSize.height = 4024;
-              light.shadow.camera.near = cameraNear;
-              light.shadow.camera.far = cameraFar;
-
-
-              light.position.z = 400
-              light.position.x = 200
-              light.position.y = 100
-
-              //light.intensity = 2
-              scene.add( light )
-
-
-              const light2 = new THREE.AmbientLight( 0xffffff );
-              light2.intensity = 0.8
-              scene.add( light2 );
-
-            
-              mixer = new AnimationMixer(gltf.scene)
-
-              animationAction = mixer.clipAction(gltf.animations[0])
-              animationAction.setLoop(THREE.LoopOnce);
-              animationAction.clampWhenFinished = true;
-              animationAction.enable = true;
-
-              ///  WTF
-
-              const geometry2 = new THREE.TorusGeometry(0.3, 0.1, 8, 16, Math.PI)
-              //const material2 = new THREE.MeshBasicMaterial({color: 0xffff00 })
-
-              const material2 = new THREE.ShaderMaterial({
-                side:THREE.DoubleSide,
-                  uniforms: {
-                      uTime: { type: "f", value: 0 },
-                      uTimeForStartTorusFire: { type: "f", value: timeForStartTorusFire },
-                      uSpendedTimeBeforeGoStart: { type: "f", value: spendedTimeBeforeGoStart },
-                      
-                  },
-                  transparent: true,
-                  vertexShader: `
-                  uniform float uTime;
-                  varying vec2 vUv;
-                  varying vec3 vPosition;
-                  varying float vNoise;
-
-                  float pseudoRandom(float seed) {
-                    return fract(sin(seed) * 43758.5453);
-                  }
-
-                  float noise(vec3 point) {
-                    float dt = dot(point, vec3(12.9898, 78.233, 123.45));
-                    float sn = (sin(dt) * 43758.5453123);
-                    return fract(sn);
-                  }
-
-                  void main() {
-                    vUv = uv;
-                    vPosition = position;
-
-                    float noiseFactor = noise(position + uTime);
-                    vNoise = noiseFactor * 1.5;
-
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                  }
-
-                  `,
-                  fragmentShader: `
-                  uniform float uTime; 
-                  uniform float uTimeForStartTorusFire;
-                  uniform float uSpendedTimeBeforeGoStart;
-                  varying vec2 vUv;
-                  varying vec3 vPosition;
-                  varying float vNoise;
-
-                  float random (vec2 st) {
-                    return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.5453123 * abs(sin(uTime)));
-                  }
-
-                  void main() {
-
-                    float rnd = random( vUv );
-
-                    // Высота относительно центра огня
-                    float heightFactor = smoothstep(0.0, 30.0, vPosition.y);
-
-                    // Определяем цвета для эффекта пламени
-                    vec3 colorBottom = vec3(1.0, 1.0, 0.0); // Желтый
-                    vec3 colorMiddle = vec3(1.0, 0.5, 0.0); // Оранжевый
-                    vec3 colorTop = vec3(1.0, 0.0, 0.0); // Красный
-
-                    // Смешиваем цвета, используя шум и высоту для создания эффекта пламени
-                    vec3 color = mix(colorBottom, colorMiddle, clamp(vNoise + 0.2, 0.0, 1.0));
-                    color = mix(color, colorTop, heightFactor);
-
-                    // Плавные переходы между цветами с точечным эффектом
-                    color *= (1.0 - heightFactor) + vNoise * heightFactor;
-
-                    float alpha = 0.0;
-                    if(vUv.x < (uTime - uSpendedTimeBeforeGoStart - uTimeForStartTorusFire) * 10.0){
-                      alpha = 1.0;
-                    }
-
-                    gl_FragColor = vec4(color, alpha);
-                    
-                  }`
-              })
-
-
-
-              torus = new THREE.Mesh(geometry2, material2)
-
-              scene.add(torus)
-
-              torus.rotation.z = -Math.PI / 2
-              torus.rotation.x = Math.PI + Math.PI / 2 + Math.PI  / 6
-              torus.rotation.y = -Math.PI / 8
-
-              torus.position.x = -0.5
-
-              render()
+        /* ############### TORUS FIRE ############### */
+          const torusGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16, Math.PI)
+          const torusMaterial = new THREE.ShaderMaterial({
+            side:THREE.DoubleSide,
+            uniforms: {
+              uTime: { type: "f", value: 0 },
+              uTimeForStartTorusFire: { type: "f", value: timeForStartTorusFire },
+              uSpendedTimeBeforeGoStart: { type: "f", value: spendedTimeBeforeGoStart },
+            },
+            transparent: true,
+            vertexShader: torusFireVertexShader,
+            fragmentShader: torusFireFragmentShader
           })
+          torus = new THREE.Mesh(torusGeometry, torusMaterial)
+          scene.add(torus)
+
+          torus.rotation.z = -Math.PI / 2
+          torus.rotation.x = Math.PI + Math.PI / 2 + Math.PI  / 6
+          torus.rotation.y = -Math.PI / 8
+
+          torus.position.x = -0.5
+
+          render()
+
+        /* ############### GEOMETRY LOADER ############### */
+        const loader2 = new GLTFLoader()
+        loader2.load("zuko2.gltf", gltf => {
+          const g = gltf.scene
+          g.castShadow = true
+          g.receiveShadow = true
+
+          g.traverse(node => {
+            if(node.isMesh) node.castShadow = true
+          })
+
+          g.rotation.y = Math.PI / 4
+          g.position.x = -2
+
+          scene.add(g)
+          scene.children[2].position.z = 0.5
+          scene.children[2].position.y = -1
+
+          mixer = new AnimationMixer(gltf.scene)
+
+          animationAction = mixer.clipAction(gltf.animations[0])
+          animationAction.setLoop(THREE.LoopOnce)
+          animationAction.clampWhenFinished = true
+          animationAction.enable = true
+        })
 
         renderer = new THREE.WebGLRenderer()
         renderer.shadowMap.enabled = true
         renderer.shadowMap.type = THREE.BasicShadowMap
-        renderer.setPixelRatio( window.devicePixelRatio )
-        renderer.setSize( window.innerWidth, window.innerHeight )
-        // renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        // renderer.toneMappingExposure = 1;
-        // renderer.outputEncoding = THREE.sRGBEncoding;
-        container.appendChild( renderer.domElement );
+        renderer.setPixelRatio(window.devicePixelRatio)
+        renderer.setSize(window.innerWidth, window.innerHeight)
+        // renderer.toneMapping = THREE.ACESFilmicToneMapping
+        // renderer.toneMappingExposure = 1
+        // renderer.outputEncoding = THREE.sRGBEncoding
+        container.appendChild(renderer.domElement)
 
-        const controls = new OrbitControls( camera, renderer.domElement );
-        controls.minDistance = 2;
-        controls.maxDistance = 40;
-        controls.target.set( 0, 0, - 0.2 );
-        controls.update();
+        const controls = new OrbitControls(camera, renderer.domElement)
+        controls.minDistance = 2
+        controls.maxDistance = 40
+        controls.target.set( 0, 0, - 0.2 )
+        controls.update()
 
         window.addEventListener( 'resize', onWindowResize )
 
-      function resizeRendererToDisplaySize(renderer) {
-        const canvas = renderer.domElement
-        const width = canvas.clientWidth
-        const height = canvas.clientHeight
-        const needResize = canvas.width !== width || canvas.height !== height
-        if (needResize) {
-          renderer.setSize(width, height, false)
+        function resizeRendererToDisplaySize(renderer) {
+          const canvas = renderer.domElement
+          const width = canvas.clientWidth
+          const height = canvas.clientHeight
+          const needResize = canvas.width !== width || canvas.height !== height
+          if (needResize) {
+            renderer.setSize(width, height, false)
+          }
+          return needResize
         }
-        return needResize
-      }
 
-      function updateUniforms() {
-        scene.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.material.type === 'ShaderMaterial' && child.material.uniforms.uTime) {
-            child.material.uniforms.uTime.value = TIME
-            resizeRendererToDisplaySize(renderer)
+        function updateUniforms() {
+          scene.traverse((child) => {
+            if(child instanceof THREE.Mesh && child.material.type === 'ShaderMaterial' && child.material.uniforms.uTime){
+              child.material.uniforms.uTime.value = TIME
+              resizeRendererToDisplaySize(renderer)
  
-            const canvas = renderer.domElement
-            const plane = scene.children.find(child => child.name == "plane")
-            child.material.needsUpdate = true;
+              const canvas = renderer.domElement
+              const plane = scene.children.find(child => child.name == "plane")
+              child.material.needsUpdate = true;
+            }
+          })       
+        }
+
+        function onWindowResize() {
+          camera.aspect = window.innerWidth / window.innerHeight
+          camera.updateProjectionMatrix()
+          renderer.setSize( window.innerWidth, window.innerHeight )
+          render()
+        }
+
+        const clock = new THREE.Clock()
+        sphere.frustumCulled = false
+
+        let once = false
+
+        function render() {
+          TIME += 0.005
+
+          if(animationAction && isStartAnimation){
+            mixer.update(clock.getDelta()) // THIS IS ANIMATION
+
+            animationAction.play()
           }
-        })       
-      }
 
-      function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight
-        camera.updateProjectionMatrix()
-
-        renderer.setSize( window.innerWidth, window.innerHeight )
-
-        render()
-
-      }
-
-      const clock = new THREE.Clock()
-      sphere.frustumCulled = false;
-
-      let once = false
-
-      function render() {
-        TIME += 0.005;
-
-        // if(TIME > 1.2){
-        //   isStartAnimation = true
-        // }
-
-        if(animationAction && isStartAnimation){
-          mixer.update(clock.getDelta()) // THIS IS ANIMATION
-
-          animationAction.play()
-        }
-
-        if(!isStartAnimation){
-          spendedTimeBeforeGoStart = TIME
-          torus.material.uniforms.uSpendedTimeBeforeGoStart.value = TIME
-        }
-
-        requestAnimationFrame(render)
-        updateUniforms()
-
-        if(TIME > timeForStartFirstFire + spendedTimeBeforeGoStart){
-          sphere.position.x += 0.4
-
-          if(material.uniforms.uScaleY.value < 1.4){
-            material.uniforms.uScaleY.value = material.uniforms.uScaleY.value + 0.4
+          if(!isStartAnimation){
+            spendedTimeBeforeGoStart = TIME
+            torus.material.uniforms.uSpendedTimeBeforeGoStart.value = TIME
           }
-          
-        }else{
-          
-        }
 
-        if(TIME > timeForStartTorusFire + spendedTimeBeforeGoStart){
+          requestAnimationFrame(render)
+          updateUniforms()
 
-          
-          //acseleration += 0.002
+          if(TIME > timeForStartFirstFire + spendedTimeBeforeGoStart){
+            sphere.position.x += 0.4
 
-          torus.position.x += 0.07 + acseleration
-          torus.position.y += 0.035 + acseleration
-
-          if(torus.scale.x < 5){
-            torus.scale.x += 0.125
-            torus.scale.y += 0.125
-            torus.scale.z += 0.05
+            if(material.uniforms.uScaleY.value < 1.4){
+              material.uniforms.uScaleY.value = material.uniforms.uScaleY.value + 0.4
+            }
+            
+          }else{
+            
           }
-          
+
+          if(TIME > timeForStartTorusFire + spendedTimeBeforeGoStart){
+            //acseleration += 0.002
+
+            torus.position.x += 0.07 + acseleration
+            torus.position.y += 0.035 + acseleration
+
+            if(torus.scale.x < 5){
+              torus.scale.x += 0.125
+              torus.scale.y += 0.125
+              torus.scale.z += 0.05
+            }
+          }
+
+          if(TIME > 0.01 && TIME < timeForStartFirstFire){
+            //sphere.visible = false
+            sphere.scale.set(0,0,0)
+            torus.scale.set(0,0,0)
+          }
+          if(TIME > spendedTimeBeforeGoStart + timeForStartFirstFire  && isStartAnimation){
+            //sphere.visible = true
+            sphere.scale.set(1,1,1)
+          }
 
 
+          renderer.render( scene, camera )
         }
-
-        // torus.scale.x += 0.01
-        // torus.scale.y += 0.01
-        // torus.scale.z += 0.01
-
-        if(TIME > 0.01 && TIME < timeForStartFirstFire){
-          //sphere.visible = false
-          sphere.scale.set(0,0,0)
-          torus.scale.set(0,0,0)
-        }
-
-        // scaling sphere
-        if(TIME > spendedTimeBeforeGoStart + timeForStartFirstFire  && isStartAnimation){
-          const h = 0.3 + (TIME - timeForStartFirstFire) *6
-          //sphere.scale.set(h,h,h)
-          sphere.scale.set(1,1,1)
-        }
-
-        if(TIME > spendedTimeBeforeGoStart + timeForStartTorusFire  && isStartAnimation){
-          const h = 0.3 + (TIME - timeForStartTorusFire) *6
-          //sphere.scale.set(h,h,h)
-          //torus.scale.set(1,1,1)
-        }
-
-
-        renderer.render( scene, camera )
-      }
-
       render()
-
       }
-
-
-
     </script>
 
   </body>
