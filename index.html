@@ -45,6 +45,31 @@
 
       document.addEventListener("mousedown", () => isStartAnimation = true)
 
+      let posXClicked = undefined
+      let prevRotation = undefined
+
+      document.addEventListener("mousedown", e => {
+        posXClicked = e.clientX
+        const pivot = scene.children.find(child => child.name == "pivot")
+        if(pivot){
+          prevRotation = pivot.rotation.y
+        }
+        // console.log(scene)
+        // console.log(e.target.clientWidth)
+      })
+      document.addEventListener("mouseup", e => {
+        posXClicked = undefined
+        prevRotation = undefined
+      })
+
+      document.addEventListener("mousemove", e => {
+        if(posXClicked && scene){
+          //scene.children.find(child => child.name == "Scene").rotation.y = (e.clientX - posXClicked) / e.target.clientWidth * Math.PI
+          scene.children.find(child => child.name == "pivot").rotation.y = prevRotation + 
+          (e.clientX - posXClicked) / e.target.clientWidth * 2 * Math.PI
+        }
+      })
+
       init();
 
 
@@ -122,7 +147,7 @@
         const backgrondPlane = new THREE.Mesh(backgrondPlaneGeometry, backgrondPlaneMaterial)
         backgrondPlane.position.x = 0
         backgrondPlane.position.y = 0
-        backgrondPlane.position.z = -0.1
+        backgrondPlane.position.z = -0.3
 
         backgrondPlane.receiveShadow = true;
 
@@ -133,6 +158,8 @@
         const thirdFire = new THREE.Mesh(geometry, material.clone())
         const fourFire = new THREE.Mesh(geometry, material.clone())
         const fiveFire = new THREE.Mesh(geometry, material.clone())
+        const sixFire = new THREE.Mesh(geometry, material.clone())
+        const sevenFire = new THREE.Mesh(geometry, material.clone())
 
         
 
@@ -148,12 +175,28 @@
               })
 
               //g.rotation.y = Math.PI / 4
-              g.position.x = -2
+              //g.position.x = -2
               //g.position.z = -5
 
               scene.add( g )
               scene.children[2].position.z = 0.5
               scene.children[2].position.y = -1
+
+              var pivot = new THREE.Group();
+              scene.add( pivot );
+              pivot.name = "pivot"
+
+              pivot.add( g );
+              pivot.position.x = -0.95
+              //g.position.set( 4, - 3, - 5 )
+              g.position.set( -1.05, -1, -0.2)
+
+              const cube = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({color: 0xFF0000}))
+              scene.add(cube)
+
+              const cube1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({color: 0x00ff00}))
+              scene.add(cube1)
+              cube1.position.x = -0.95
 
               const light =  new THREE.DirectionalLight("#ffffff", 0.2);
               var cameraNear = 1, cameraFar = 5000;
@@ -301,6 +344,21 @@
               fiveFire.rotation.z = -Math.PI / 2
               scene.add(fiveFire)
 
+              // SIX
+
+              sixFire.position.x = -1.7
+              sixFire.position.y = 0.2
+              sixFire.rotation.z = -Math.PI / 2
+              scene.add(sixFire)
+
+              // SEVEN
+
+              sevenFire.position.x = -2.2
+              sevenFire.position.y = 0.8
+              sevenFire.rotation.z = Math.PI / 4
+              scene.add(sevenFire)
+
+
               
 
               render()
@@ -320,11 +378,11 @@
         // renderer.outputEncoding = THREE.sRGBEncoding;
         container.appendChild( renderer.domElement );
 
-        const controls = new OrbitControls( camera, renderer.domElement );
-        controls.minDistance = 2;
-        controls.maxDistance = 40;
-        controls.target.set( 0, 0, - 0.2 );
-        controls.update();
+        // const controls = new OrbitControls( camera, renderer.domElement );
+        // controls.minDistance = 2;
+        // controls.maxDistance = 40;
+        // controls.target.set( 0, 0, - 0.2 );
+        // controls.update();
 
         window.addEventListener( 'resize', onWindowResize )
 
@@ -381,7 +439,7 @@
           animationAction.play()
         }
 
-        console.log(mixer.time)
+        //console.log(mixer.time)
 
         if(!isStartAnimation){
           spendedTimeBeforeGoStart = TIME
@@ -398,17 +456,6 @@
           }
         }
 
-        // if(TIME > timeForStartFirstFire + spendedTimeBeforeGoStart){
-        //   sphere.position.x += 0.4
-
-        //   if(material.uniforms.uScaleY.value < 1.4){
-        //     material.uniforms.uScaleY.value = material.uniforms.uScaleY.value + 0.4
-        //   }
-          
-        // }else{
-          
-        // }
-
         if(mixer.time > 0.6){
           acseleration += 0.002
 
@@ -421,21 +468,6 @@
             torus.scale.z += 0.05
           }
         }
-
-        // if(TIME > timeForStartTorusFire + spendedTimeBeforeGoStart){
-
-          
-        //   //acseleration += 0.002
-
-        //   torus.position.x += 0.07 + acseleration
-        //   torus.position.y += 0.035 + acseleration
-
-        //   if(torus.scale.x < 5){
-        //     torus.scale.x += 0.125
-        //     torus.scale.y += 0.125
-        //     torus.scale.z += 0.05
-        //   }
-        // }
 
         if(mixer.time > 2.2){ //TIME > timeForStartThirdFire + spendedTimeBeforeGoStart
           thirdFire.scale.set(1,1,1)
@@ -454,17 +486,28 @@
           }
         }
 
-        if(mixer.time > 3){ // TIME > timeForStartFiveFire + spendedTimeBeforeGoStart
+        if(mixer.time > 3.1){ // TIME > timeForStartFiveFire + spendedTimeBeforeGoStart
           fiveFire.scale.set(1,1,1)
           fiveFire.position.x += 0.4
           if(fiveFire.material.uniforms.uScaleY.value < 1.4){
             fiveFire.material.uniforms.uScaleY.value = fiveFire.material.uniforms.uScaleY.value + 0.4
           }
         }
-
-        // torus.scale.x += 0.01
-        // torus.scale.y += 0.01
-        // torus.scale.z += 0.01
+        if(mixer.time > 4.1){ // TIME > timeForStartFiveFire + spendedTimeBeforeGoStart
+          sixFire.scale.set(1,1,1)
+          sixFire.position.x -= 0.4
+          if(sixFire.material.uniforms.uScaleY.value < 1.4){
+            sixFire.material.uniforms.uScaleY.value = sixFire.material.uniforms.uScaleY.value + 0.4
+          }
+        }
+        if(mixer.time > 5.1){
+          sevenFire.scale.set(1,1,1)
+          sevenFire.position.x -= 0.4
+          sevenFire.position.y += 0.4
+          if(sevenFire.material.uniforms.uScaleY.value < 1.4){
+            sevenFire.material.uniforms.uScaleY.value = sevenFire.material.uniforms.uScaleY.value + 0.4
+          }
+        }
 
         if(TIME > 0.01 && TIME < timeForStartFirstFire){
           //sphere.visible = false
@@ -473,6 +516,8 @@
           thirdFire.scale.set(0,0,0)
           fourFire.scale.set(0,0,0)
           fiveFire.scale.set(0,0,0)
+          sixFire.scale.set(0,0,0)
+          sevenFire.scale.set(0,0,0)
         }
 
         // scaling sphere
@@ -492,6 +537,8 @@
       render()
 
       }
+
+      
 
 
 
