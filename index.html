@@ -23,6 +23,7 @@
       import { GLTFLoader } from './GLTFLoader.js';
       import {TextureLoader} from "./three/src/loaders/TextureLoader.js"
       import {AnimationMixer} from "./three/src/animation/AnimationMixer.js"
+      import { GUI } from './three/examples/jsm/libs/lil-gui.module.min.js'
       //import { GLTFExporter } from './three/addons/exporters/GLTFExporter.js';
       //import { RGBELoader } from './RGBELoader.js';
 
@@ -43,7 +44,7 @@
 
       let acseleration = 0
 
-      document.addEventListener("mousedown", () => isStartAnimation = true)
+      document.addEventListener("keydown", () => isStartAnimation = true)
 
       let posXClicked = undefined
       let prevRotation = undefined
@@ -132,7 +133,7 @@
 
         camera.position.set(0,0,5)
 
-        const backgrondPlaneGeometry = new THREE.PlaneGeometry(12,4.2)
+        const backgrondPlaneGeometry = new THREE.PlaneGeometry(14,4.6)
         
 
         const loader = new THREE.TextureLoader();
@@ -146,13 +147,22 @@
 
         const backgrondPlane = new THREE.Mesh(backgrondPlaneGeometry, backgrondPlaneMaterial)
         backgrondPlane.position.x = 0
-        backgrondPlane.position.y = 0
-        backgrondPlane.position.z = -0.3
+        backgrondPlane.position.y = 1
+        //backgrondPlane.position.z = -0.1
 
         backgrondPlane.receiveShadow = true;
 
 
         scene.add(backgrondPlane)
+
+
+        // floor
+
+        const floor = new THREE.Mesh(new THREE.BoxGeometry(10,1,10), new THREE.MeshPhongMaterial({color: 0x000000}))
+        floor.position.y = -1.50
+        scene.add(floor)
+
+
 
 
         const thirdFire = new THREE.Mesh(geometry, material.clone())
@@ -164,7 +174,7 @@
         
 
          const loader2 = new GLTFLoader();
-            loader2.load( 'zuko3.gltf', function ( gltf ) {
+            loader2.load( 'zuko5.gltf', function ( gltf ) { // zuko3.gltf
               const g = gltf.scene
               g.castShadow = true;
               g.receiveShadow = true;
@@ -179,27 +189,31 @@
               //g.position.z = -5
 
               scene.add( g )
-              scene.children[2].position.z = 0.5
-              scene.children[2].position.y = -1
+              // scene.children[2].position.z = 0.5
+              // scene.children[2].position.y = -1
 
               var pivot = new THREE.Group();
               scene.add( pivot );
               pivot.name = "pivot"
 
               pivot.add( g );
-              pivot.position.x = -0.95
+              pivot.position.x = -1.85
+              pivot.position.z = 0.5
+              //pivot.position.z = -0.1
+
               //g.position.set( 4, - 3, - 5 )
-              g.position.set( -1.05, -1, -0.2)
+              g.position.set( -1.0, -1, -0.05)
 
               const cube = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({color: 0xFF0000}))
               scene.add(cube)
+              cube.position.copy(g.position)
 
-              const cube1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({color: 0x00ff00}))
+              const cube1 = new THREE.Mesh(new THREE.BoxGeometry(0.01, 5, 0.01), new THREE.MeshBasicMaterial({color: 0x00ff00}))
               scene.add(cube1)
-              cube1.position.x = -0.95
+              cube1.position.copy(pivot.position)
 
               const light =  new THREE.DirectionalLight("#ffffff", 0.2);
-              var cameraNear = 1, cameraFar = 5000;
+              var cameraNear = 0.01, cameraFar = 5000;
               light.castShadow = true;
               light.shadow.mapSize.width = 4024;
               light.shadow.mapSize.height = 4024;
@@ -378,11 +392,30 @@
         // renderer.outputEncoding = THREE.sRGBEncoding;
         container.appendChild( renderer.domElement );
 
-        // const controls = new OrbitControls( camera, renderer.domElement );
-        // controls.minDistance = 2;
-        // controls.maxDistance = 40;
-        // controls.target.set( 0, 0, - 0.2 );
-        // controls.update();
+
+        const gui = new GUI()
+
+        const gg = {"controls": false, "visible": true}
+
+        const controls = new OrbitControls( camera, renderer.domElement );
+        controls.minDistance = 2;
+        controls.maxDistance = 40;
+        controls.target.set( 0, 0, - 0.2 );
+        controls.enableRotate = false;
+        controls.update();
+
+        gui.add(gg, "controls").onChange(e => {
+          if(e){
+            controls.enableRotate = true;
+          }else{
+            // to disable rotation
+            controls.enableRotate = false;
+          }
+        })
+
+        gui.add(gg, "visible").onChange(bool => {
+          scene.children.find(child => child.name == "pivot").traverse(_ => _.visible = bool)
+        })
 
         window.addEventListener( 'resize', onWindowResize )
 
@@ -411,6 +444,7 @@
       }
 
       function onWindowResize() {
+
         camera.aspect = window.innerWidth / window.innerHeight
         camera.updateProjectionMatrix()
 
@@ -426,6 +460,8 @@
       let once = false
 
       function render() {
+        //camera.lookAt(0, -0.2, 0)
+
         TIME += 0.005;
 
         // if(TIME > 1.2){
