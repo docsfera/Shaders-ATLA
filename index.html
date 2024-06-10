@@ -31,6 +31,7 @@
       let TIME = 0
 
       let isStartAnimation = false
+      let isAnimationEnd = false
       let spendedTimeBeforeGoStart = 0
 
       let torus
@@ -64,7 +65,7 @@
       })
 
       document.addEventListener("mousemove", e => {
-        if(posXClicked && scene){
+        if(posXClicked && scene && isAnimationEnd){
           //scene.children.find(child => child.name == "Scene").rotation.y = (e.clientX - posXClicked) / e.target.clientWidth * Math.PI
           scene.children.find(child => child.name == "pivot").rotation.y = prevRotation + 
           (e.clientX - posXClicked) / e.target.clientWidth * 2 * Math.PI
@@ -171,6 +172,10 @@
         const sixFire = new THREE.Mesh(geometry, material.clone())
         const sevenFire = new THREE.Mesh(geometry, material.clone())
 
+        const pointLight = new THREE.PointLight("#FFAB0F", 10)
+        pointLight.distance = 1
+        scene.add(pointLight)
+
         
 
          const loader2 = new GLTFLoader();
@@ -230,8 +235,10 @@
 
 
               const light2 = new THREE.AmbientLight( 0xffffff );
-              light2.intensity = 0.8
+              light2.intensity = 0.4
               scene.add( light2 );
+
+              
 
             
               mixer = new AnimationMixer(gltf.scene)
@@ -417,6 +424,9 @@
           scene.children.find(child => child.name == "pivot").traverse(_ => _.visible = bool)
         })
 
+        gui.add(pointLight, "distance").min(0).max(10)
+        gui.add(pointLight, "intensity").min(0).max(10)
+
         window.addEventListener( 'resize', onWindowResize )
 
       function resizeRendererToDisplaySize(renderer) {
@@ -487,6 +497,10 @@
 
         if(mixer.time > 0.4){
           sphere.position.x += 0.4
+          pointLight.distance = 6
+          pointLight.position.y = 2
+          pointLight.position.x = sphere.position.x
+          //pointLight.position.copy(sphere.position)
           if(material.uniforms.uScaleY.value < 1.4){
             material.uniforms.uScaleY.value = material.uniforms.uScaleY.value + 0.4
           }
@@ -498,6 +512,10 @@
           torus.position.x += 0.07 + acseleration
           torus.position.y += 0.035 + acseleration
 
+          pointLight.position.copy(torus.position)
+          // pointLight.position.y = 2
+          // pointLight.position.x = sphere.position.x
+
           if(torus.scale.x < 5){
             torus.scale.x += 0.125
             torus.scale.y += 0.125
@@ -505,44 +523,53 @@
           }
         }
 
-        if(mixer.time > 2.2){ //TIME > timeForStartThirdFire + spendedTimeBeforeGoStart
+        if(mixer.time > 1.7){ //TIME > timeForStartThirdFire + spendedTimeBeforeGoStart
           thirdFire.scale.set(1,1,1)
           thirdFire.position.x += 0.4
           thirdFire.position.y += 0.4
+          pointLight.position.copy(thirdFire.position)
           if(thirdFire.material.uniforms.uScaleY.value < 1.4){
             thirdFire.material.uniforms.uScaleY.value = thirdFire.material.uniforms.uScaleY.value + 0.4
           }
         }
 
-        if(mixer.time > 2.6){ //TIME > timeForStartFourFire + spendedTimeBeforeGoStart
+        if(mixer.time > 2){ //TIME > timeForStartFourFire + spendedTimeBeforeGoStart
           fourFire.scale.set(1,1,1)
           fourFire.position.x += 0.4
+          pointLight.position.copy(fourFire.position)
           if(fourFire.material.uniforms.uScaleY.value < 1.4){
             fourFire.material.uniforms.uScaleY.value = fourFire.material.uniforms.uScaleY.value + 0.4
           }
         }
 
-        if(mixer.time > 3.1){ // TIME > timeForStartFiveFire + spendedTimeBeforeGoStart
+        if(mixer.time > 2.4){ // TIME > timeForStartFiveFire + spendedTimeBeforeGoStart
           fiveFire.scale.set(1,1,1)
           fiveFire.position.x += 0.4
+          pointLight.position.copy(fiveFire.position)
           if(fiveFire.material.uniforms.uScaleY.value < 1.4){
             fiveFire.material.uniforms.uScaleY.value = fiveFire.material.uniforms.uScaleY.value + 0.4
           }
         }
-        if(mixer.time > 4.1){ // TIME > timeForStartFiveFire + spendedTimeBeforeGoStart
+        if(mixer.time > 3.2){ // TIME > timeForStartFiveFire + spendedTimeBeforeGoStart
           sixFire.scale.set(1,1,1)
           sixFire.position.x -= 0.4
+          pointLight.position.copy(sixFire.position)
           if(sixFire.material.uniforms.uScaleY.value < 1.4){
             sixFire.material.uniforms.uScaleY.value = sixFire.material.uniforms.uScaleY.value + 0.4
           }
         }
-        if(mixer.time > 5.1){
+        if(mixer.time > 4){
           sevenFire.scale.set(1,1,1)
+          pointLight.position.copy(sevenFire.position)
           sevenFire.position.x -= 0.4
           sevenFire.position.y += 0.4
           if(sevenFire.material.uniforms.uScaleY.value < 1.4){
             sevenFire.material.uniforms.uScaleY.value = sevenFire.material.uniforms.uScaleY.value + 0.4
           }
+        }
+
+        if(mixer.time > 5){
+          isAnimationEnd = true
         }
 
         if(TIME > 0.01 && TIME < timeForStartFirstFire){
