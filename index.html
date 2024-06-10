@@ -56,7 +56,7 @@
         if(pivot){
           prevRotation = pivot.rotation.y
         }
-        // console.log(scene)
+        console.log(scene)
         // console.log(e.target.clientWidth)
       })
       document.addEventListener("mouseup", e => {
@@ -159,7 +159,7 @@
 
         // floor
 
-        const floor = new THREE.Mesh(new THREE.BoxGeometry(10,1,10), new THREE.MeshPhongMaterial({color: 0x000000}))
+        const floor = new THREE.Mesh(new THREE.BoxGeometry(10,1,10), new THREE.MeshBasicMaterial({color: 0x000000}))
         floor.position.y = -1.50
         scene.add(floor)
 
@@ -172,8 +172,33 @@
         const sixFire = new THREE.Mesh(geometry, material.clone())
         const sevenFire = new THREE.Mesh(geometry, material.clone())
 
+
+        // Light
+
+        const light =  new THREE.DirectionalLight("#ffffff", 0.2);
+        var cameraNear = 0.01, cameraFar = 5000;
+        light.castShadow = true;
+        light.shadow.mapSize.width = 4024;
+        light.shadow.mapSize.height = 4024;
+        light.shadow.camera.near = cameraNear;
+        light.shadow.camera.far = cameraFar;
+
+
+        light.position.z = 400
+        light.position.x = 200
+        light.position.y = 100
+
+        //light.intensity = 2
+        scene.add( light )
+
+
+        const light2 = new THREE.AmbientLight( 0xffffff );
+        light2.intensity = 0.4
+        scene.add( light2 );
+
         const pointLight = new THREE.PointLight("#FFAB0F", 10)
         pointLight.distance = 1
+
         scene.add(pointLight)
 
         
@@ -217,26 +242,7 @@
               scene.add(cube1)
               cube1.position.copy(pivot.position)
 
-              const light =  new THREE.DirectionalLight("#ffffff", 0.2);
-              var cameraNear = 0.01, cameraFar = 5000;
-              light.castShadow = true;
-              light.shadow.mapSize.width = 4024;
-              light.shadow.mapSize.height = 4024;
-              light.shadow.camera.near = cameraNear;
-              light.shadow.camera.far = cameraFar;
-
-
-              light.position.z = 400
-              light.position.x = 200
-              light.position.y = 100
-
-              //light.intensity = 2
-              scene.add( light )
-
-
-              const light2 = new THREE.AmbientLight( 0xffffff );
-              light2.intensity = 0.4
-              scene.add( light2 );
+              
 
               
 
@@ -424,8 +430,30 @@
           scene.children.find(child => child.name == "pivot").traverse(_ => _.visible = bool)
         })
 
-        gui.add(pointLight, "distance").min(0).max(10)
-        gui.add(pointLight, "intensity").min(0).max(10)
+        let Configuracion=function(){
+          this.color = new THREE.Color(0.3333333432674408, 0.12452887743711472, 0.10101473331451416).getHexString()
+        }
+        let conf = new Configuracion()
+        let controlador = gui.addColor( conf, 'color').onChange( colorValue => {
+          const pivot = scene.children.find(child => child.name == "pivot")
+          pivot.traverse(child => {
+            if(child.material) child.material.color = new THREE.Color(colorValue)
+          })
+        })
+
+        const f1 = gui.addFolder("PointLight")
+        f1.add(pointLight, "distance").min(0).max(10).step(0.1)
+        f1.add(pointLight, "intensity").min(0).max(10).step(0.1)
+        f1.add(pointLight.position, "z").min(0).max(10).step(0.1)
+
+        const f2 = gui.addFolder("AmbientLight")
+        f2.add(light2, "intensity").min(0).max(10).step(0.1)
+
+        const f3 = gui.addFolder("DirectionalLight")
+        f3.add(light, "intensity").min(0).max(10).step(0.1)
+        f3.add(light.position, "x").min(0).max(400)
+        f3.add(light.position, "y").min(0).max(400)
+        f3.add(light.position, "z").min(0).max(400)
 
         window.addEventListener( 'resize', onWindowResize )
 
@@ -512,9 +540,9 @@
           torus.position.x += 0.07 + acseleration
           torus.position.y += 0.035 + acseleration
 
-          pointLight.position.copy(torus.position)
-          // pointLight.position.y = 2
-          // pointLight.position.x = sphere.position.x
+          pointLight.position.x = torus.position.x
+          pointLight.position.y = torus.position.y
+          //pointLight.position.copy(torus.position)
 
           if(torus.scale.x < 5){
             torus.scale.x += 0.125
@@ -527,7 +555,11 @@
           thirdFire.scale.set(1,1,1)
           thirdFire.position.x += 0.4
           thirdFire.position.y += 0.4
-          pointLight.position.copy(thirdFire.position)
+
+          pointLight.position.x = thirdFire.position.x
+          pointLight.position.y = thirdFire.position.y
+          //pointLight.position.copy(thirdFire.position)
+
           if(thirdFire.material.uniforms.uScaleY.value < 1.4){
             thirdFire.material.uniforms.uScaleY.value = thirdFire.material.uniforms.uScaleY.value + 0.4
           }
@@ -536,7 +568,10 @@
         if(mixer.time > 2){ //TIME > timeForStartFourFire + spendedTimeBeforeGoStart
           fourFire.scale.set(1,1,1)
           fourFire.position.x += 0.4
-          pointLight.position.copy(fourFire.position)
+
+          pointLight.position.x = fourFire.position.x
+          pointLight.position.y = fourFire.position.y
+          //pointLight.position.copy(fourFire.position)
           if(fourFire.material.uniforms.uScaleY.value < 1.4){
             fourFire.material.uniforms.uScaleY.value = fourFire.material.uniforms.uScaleY.value + 0.4
           }
@@ -545,7 +580,10 @@
         if(mixer.time > 2.4){ // TIME > timeForStartFiveFire + spendedTimeBeforeGoStart
           fiveFire.scale.set(1,1,1)
           fiveFire.position.x += 0.4
-          pointLight.position.copy(fiveFire.position)
+
+          pointLight.position.x = fiveFire.position.x
+          pointLight.position.y = fiveFire.position.y
+          //pointLight.position.copy(fiveFire.position)
           if(fiveFire.material.uniforms.uScaleY.value < 1.4){
             fiveFire.material.uniforms.uScaleY.value = fiveFire.material.uniforms.uScaleY.value + 0.4
           }
@@ -553,16 +591,24 @@
         if(mixer.time > 3.2){ // TIME > timeForStartFiveFire + spendedTimeBeforeGoStart
           sixFire.scale.set(1,1,1)
           sixFire.position.x -= 0.4
-          pointLight.position.copy(sixFire.position)
+
+          pointLight.position.x = sixFire.position.x
+          pointLight.position.y = sixFire.position.y
+          //pointLight.position.copy(sixFire.position)
+
           if(sixFire.material.uniforms.uScaleY.value < 1.4){
             sixFire.material.uniforms.uScaleY.value = sixFire.material.uniforms.uScaleY.value + 0.4
           }
         }
         if(mixer.time > 4){
           sevenFire.scale.set(1,1,1)
-          pointLight.position.copy(sevenFire.position)
+          //pointLight.position.copy(sevenFire.position)
           sevenFire.position.x -= 0.4
           sevenFire.position.y += 0.4
+
+          pointLight.position.x = sevenFire.position.x
+          pointLight.position.y = sevenFire.position.y
+
           if(sevenFire.material.uniforms.uScaleY.value < 1.4){
             sevenFire.material.uniforms.uScaleY.value = sevenFire.material.uniforms.uScaleY.value + 0.4
           }
