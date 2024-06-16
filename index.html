@@ -12,6 +12,7 @@
   </head>
 
   <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/20.0.0/tween.umd.js"></script>
     <script type="module">
 
 
@@ -41,6 +42,8 @@
       const timeForStartThirdFire = 0.45
       const timeForStartFourFire = 0.52
       const timeForStartFiveFire = 0.62
+
+      let isPlayIn = false
 
 
       let acseleration = 0
@@ -81,9 +84,7 @@
         const container = document.createElement( 'div' );
         document.body.appendChild( container );
 
-        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 20 );
-        camera.position.set( - 1.8, 0.6, 2.7 );
-
+        camera = new THREE.PerspectiveCamera( 20, window.innerWidth / window.innerHeight, 0.25, 20 );
         scene = new THREE.Scene();
 
 
@@ -132,7 +133,9 @@
         sphere.position.y = 0.1
         scene.add(sphere)
 
-        camera.position.set(0,0,5)
+        //camera.position.set(0,0,5)
+        camera.position.set(-0.8, 0, 10)
+        camera.lookAt(new THREE.Vector3(10, 0, 0))
 
         const backgrondPlaneGeometry = new THREE.PlaneGeometry(14,4.6)
         
@@ -176,7 +179,7 @@
         // Light
 
         const light =  new THREE.DirectionalLight("#ffffff", 0.2);
-        var cameraNear = 0.01, cameraFar = 5000;
+        var cameraNear = 0.00001, cameraFar = 5000;
         light.castShadow = true;
         light.shadow.mapSize.width = 4024;
         light.shadow.mapSize.height = 4024;
@@ -209,6 +212,8 @@
               g.castShadow = true;
               g.receiveShadow = true;
 
+              g.traverse(_ => _.frustumCulled = false)
+              //g.scale.set(0.8, 0.8, 0.8)
 
               g.traverse(node => {
                 if(node.isMesh) node.castShadow = true
@@ -232,7 +237,7 @@
               //pivot.position.z = -0.1
 
               //g.position.set( 4, - 3, - 5 )
-              g.position.set( -1.0, -1, -0.05)
+              g.position.set( -1.0, -0.95, -0.05)
 
               const cube = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({color: 0xFF0000}))
               scene.add(cube)
@@ -405,6 +410,20 @@
         // renderer.outputEncoding = THREE.sRGBEncoding;
         container.appendChild( renderer.domElement );
 
+        const tween = new TWEEN.Tween(camera.position, false) // Create a new tween that modifies 'coords'.
+            .to({x: -0.8, y: 0, z: 7},2000) // Move to (300, 200) in 1 second.
+            .easing(TWEEN.Easing.Cubic.InOut) // Use an easing function to make the animation smooth.
+            // .yoyo(false)
+            // .repeat(1)
+            .onUpdate(coords => {
+              // Called after tween.js updates 'coords'.
+              // Move 'box' to the position described by 'coords' with a CSS translation
+              //console.log("update", coords)
+                            camera.position.set(coords.x, coords.y, coords.z)
+            })
+            //.start() // Start the tween immediately.
+        //tween.repeat(1)
+
 
         const gui = new GUI()
 
@@ -501,6 +520,7 @@
         //camera.lookAt(0, -0.2, 0)
 
         TIME += 0.005;
+        camera.lookAt(new THREE.Vector3(-0.8, 0, 0))
 
         // if(TIME > 1.2){
         //   isStartAnimation = true
@@ -616,7 +636,16 @@
 
         if(mixer.time > 5){
           isAnimationEnd = true
+
+          if(!isPlayIn){
+            isPlayIn = true
+            tween.start()
+            
+          }
+          tween.update()
         }
+
+
 
         if(TIME > 0.01 && TIME < timeForStartFirstFire){
           //sphere.visible = false
