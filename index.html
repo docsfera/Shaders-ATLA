@@ -24,6 +24,7 @@
       import { GLTFLoader } from './GLTFLoader.js';
       import {TextureLoader} from "./three/src/loaders/TextureLoader.js"
       import {AnimationMixer} from "./three/src/animation/AnimationMixer.js"
+      import {AnimationClip} from "./three/src/animation/AnimationClip.js"
       import { GUI } from './three/examples/jsm/libs/lil-gui.module.min.js'
       //import { GLTFExporter } from './three/addons/exporters/GLTFExporter.js';
       //import { RGBELoader } from './RGBELoader.js';
@@ -328,10 +329,10 @@
 
         scene.add(pointLight)
 
-        
+        let _GClips = []
 
          const loader2 = new GLTFLoader();
-            loader2.load( 'zuko5.gltf', function ( gltf ) { // zuko3.gltf
+            loader2.load( '___zuko5.gltf', function ( gltf ) { // zuko3.gltf
               const g = gltf.scene
               g.castShadow = true;
               g.receiveShadow = true;
@@ -380,7 +381,21 @@
             
               mixer = new AnimationMixer(gltf.scene)
 
-              animationAction = mixer.clipAction(gltf.animations[0])
+              const clips = gltf.animations
+
+              _GClips = clips
+              console.log({clips})
+
+              const clip  = THREE.AnimationClip.findByName(clips, "fight")
+
+              console.log("f")
+              console.log(clip)
+
+              console.log(gltf)
+              console.log("______________")
+              console.log(mixer)
+
+              animationAction = mixer.clipAction(clip)
               animationAction.setLoop(THREE.LoopOnce);
               animationAction.clampWhenFinished = true;
               animationAction.enable = true;
@@ -767,6 +782,15 @@
           if(!isPlayIn){
             isPlayIn = true
             tween.start()
+
+              const clip  = THREE.AnimationClip.findByName(_GClips, "idle")
+
+              console.log("f")
+              console.log(clip)
+
+              animationAction = mixer.clipAction(clip)
+              animationAction.clampWhenFinished = true;
+              animationAction.enable = true;
             
           }
           tween.update()
