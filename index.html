@@ -27,6 +27,7 @@
       import {AnimationClip} from "./three/src/animation/AnimationClip.js"
       import { GUI } from './three/examples/jsm/libs/lil-gui.module.min.js'
       //import { GLTFExporter } from './three/addons/exporters/GLTFExporter.js';
+      //import { FBXLoader } from './FBXLoader.js'; //./three/examples/jsm/loaders/FBXLoader.js
       //import { RGBELoader } from './RGBELoader.js';
 
       let camera, scene, renderer;
@@ -332,13 +333,14 @@
         let _GClips = []
 
          const loader2 = new GLTFLoader();
-            loader2.load( '___zuko5.gltf', function ( gltf ) { // zuko3.gltf
+         //const loader2 = new FBXLoader();
+            loader2.load( 'zuko5.glb', function ( gltf ) { // zuko3.gltf
               const g = gltf.scene
               g.castShadow = true;
               g.receiveShadow = true;
 
               g.traverse(_ => _.frustumCulled = false)
-              //g.scale.set(0.8, 0.8, 0.8)
+              //g.scale.set(100, 100, 100)
 
               g.traverse(node => {
                 if(node.isMesh) node.castShadow = true
@@ -777,23 +779,38 @@
         }
 
         if(mixer.time > 5){
+          scene.getObjectByName("pivot").children[0].position.set( -0.5, -0.95, -0.05)
           isAnimationEnd = true
 
           if(!isPlayIn){
             isPlayIn = true
+
             tween.start()
 
               const clip  = THREE.AnimationClip.findByName(_GClips, "idle")
 
               console.log("f")
               console.log(clip)
+              console.log("scene")
+              console.log(scene)
 
+
+
+              scene.getObjectByName("pivot").children[0].position.set( -0.5, -0.95, -0.05)
               animationAction = mixer.clipAction(clip)
+              scene.getObjectByName("pivot").children[0].position.set( -0.5, -0.95, -0.05)
+              
+
+
               animationAction.clampWhenFinished = true;
               animationAction.enable = true;
+
+
             
           }
           tween.update()
+
+
         }
 
 
