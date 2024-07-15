@@ -30,6 +30,9 @@
       //import { FBXLoader } from './FBXLoader.js'; //./three/examples/jsm/loaders/FBXLoader.js
       //import { RGBELoader } from './RGBELoader.js';
 
+      import { TextGeometry } from './TextGeometry.js';
+      import { FontLoader } from './FontLoader.js';
+
       let camera, scene, renderer;
       let TIME = 0
 
@@ -300,6 +303,41 @@
         const fiveFire = new THREE.Mesh(geometry, material.clone())
         const sixFire = new THREE.Mesh(geometry, material.clone())
         const sevenFire = new THREE.Mesh(geometry, material.clone())
+
+
+        ///
+
+
+        var fontLoader = new FontLoader()
+        fontLoader.load( './helvetiker_regular.typeface.json', font => {
+          const geometry = new TextGeometry( 
+            `
+            6000
+            gsfgfgsdf
+            g
+            fdsgfd
+            gl_FragColorfdsgdfgfdsg
+            fgsfdgfdsgfdg
+            fsgsdfdfsgdfsg
+
+            `, {
+            font,
+            size: 0.09,
+            height: 0.01,
+            curveSegments: 10,
+            bevelEnabled: false,
+            bevelThickness: 0,
+            bevelSize: 0,
+            bevelOffset: 0,
+            bevelSegments: 0
+           })
+          const text = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({color: "white"}))
+          text.position.y = 1
+          //text.position.z = 1
+          text.position.x = -0.5
+          scene.add(text)
+
+        })
 
 
         // Light
