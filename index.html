@@ -32,6 +32,7 @@
 
       import { TextGeometry } from './TextGeometry.js';
       import { FontLoader } from './FontLoader.js';
+      import { CSS3DObject, CSS3DRenderer  } from './CSS3DRenderer.js';
 
       let camera, scene, renderer;
       let TIME = 0
@@ -166,6 +167,41 @@
         const backgrondPlane = new THREE.Mesh(backgrondPlaneGeometry, backgrondPlaneMaterial)
         backgrondPlane.position.x = 0
         backgrondPlane.position.y = 1
+
+
+
+        /////////
+
+
+
+
+
+
+        var element = document.createElement('div');
+    element.style.width = '20px';
+    element.style.height = '20px';
+    element.style.opacity = 0.5;
+    element.style.background = new THREE.Color(0xff0000).getStyle();
+
+    const txt = document.createElement('p')
+    txt.innerText = "blabla"
+    txt.style.fontSize = "2px"
+    element.appendChild(txt)
+    var object = new CSS3DObject(element);
+    // object.position.x = 2;
+    // object.position.y = 2;
+    object.position.z = 0.2;
+    object.name = "css"
+    object.scale.set(0.1, 0.1, 0.1)
+
+    //object.rotation.y = Math.PI / 12
+
+    scene.add(object);
+
+
+
+
+        //////
 
         const realFireShader = new THREE.ShaderMaterial({
           uniforms: {iTime: { type: "f", value: 1.0 }},
@@ -413,13 +449,9 @@
               //g.position.set( 4, - 3, - 5 )
               g.position.set( -1.0, -0.95, -0.05)
 
-              const cube = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({color: 0xFF0000}))
-              scene.add(cube)
-              cube.position.copy(g.position)
-
-              const cube1 = new THREE.Mesh(new THREE.BoxGeometry(0.01, 5, 0.01), new THREE.MeshBasicMaterial({color: 0x00ff00}))
-              scene.add(cube1)
-              cube1.position.copy(pivot.position)
+              // const cube1 = new THREE.Mesh(new THREE.BoxGeometry(0.01, 5, 0.01), new THREE.MeshBasicMaterial({color: 0x00ff00}))
+              // scene.add(cube1)
+              // cube1.position.copy(pivot.position)
 
               
 
@@ -588,7 +620,8 @@
 
 
 
-        renderer = new THREE.WebGLRenderer()
+        renderer = new THREE.WebGLRenderer({ alpha: true })
+        renderer.setClearColor( 0x000000, 0 ); // the default
         renderer.shadowMap.enabled = true
         renderer.shadowMap.type = THREE.BasicShadowMap
         renderer.setPixelRatio( window.devicePixelRatio )
@@ -597,6 +630,12 @@
         // renderer.toneMappingExposure = 1;
         // renderer.outputEncoding = THREE.sRGBEncoding;
         container.appendChild( renderer.domElement );
+
+        const renderer2 = new CSS3DRenderer();
+        renderer2.setSize( window.innerWidth, window.innerHeight );
+        renderer2.domElement.style.position = 'absolute';
+        renderer2.domElement.style.top = 0;
+        container.appendChild( renderer2.domElement );
 
         const tween = new TWEEN.Tween(camera.position, false) // Create a new tween that modifies 'coords'.
             .to({x: 3.0420491969188386, y: 0.46414441424843533, z: 6.358239599637057},2000) // Move to (300, 200) in 1 second.
@@ -832,7 +871,9 @@
 
             tween.start()
             realFire.scale.set(1,1,1)
-            scene.getObjectByName("text").visible = true
+            //scene.getObjectByName("text").visible = true
+            //renderer2.render( scene, camera )
+            //scene.getObjectByName("css").rotation.y = Math.PI / 24
 
               const clip  = THREE.AnimationClip.findByName(_GClips, "idle")
 
@@ -884,6 +925,7 @@
 
 
         renderer.render( scene, camera )
+        renderer2.render( scene, camera )
       }
 
       render()
