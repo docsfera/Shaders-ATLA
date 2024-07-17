@@ -54,7 +54,10 @@
       let acseleration = 0
       let realFire
 
-      document.addEventListener("keydown", () => isStartAnimation = true)
+      document.addEventListener("keydown", () => {
+        isStartAnimation = true
+        console.log(camera.position)
+      })
 
       let posXClicked = undefined
       let prevRotation = undefined
@@ -271,6 +274,8 @@
 
         realFire.geometry.translate(0.4,0,0)
 
+        //realFire.visible = false
+
         //realFire.rotation.y = Math.PI / 4
 
         realFire2.position.x = 0.2
@@ -312,13 +317,13 @@
         fontLoader.load( './helvetiker_regular.typeface.json', font => {
           const geometry = new TextGeometry( 
             `
-            6000
-            gsfgfgsdf
-            g
-            fdsgfd
-            gl_FragColorfdsgdfgfdsg
-            fgsfdgfdsgfdg
-            fsgsdfdfsgdfsg
+            The Fire Nation is one of the world's four 
+            nations and five sovereign states. 
+            It is an absolute monarchy led by 
+            the Fire Lord and home to most firebenders.
+            Geographically, the nation is located along the
+             planet's equator in the western hemisphere and 
+             is composed of several islands, named the Fire Islands.
 
             `, {
             font,
@@ -333,9 +338,11 @@
            })
           const text = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({color: "white"}))
           text.position.y = 1
+          text.name = "text"
           //text.position.z = 1
-          text.position.x = -0.5
+          text.position.x = -1.2
           scene.add(text)
+          text.visible = false
 
         })
 
@@ -592,7 +599,7 @@
         container.appendChild( renderer.domElement );
 
         const tween = new TWEEN.Tween(camera.position, false) // Create a new tween that modifies 'coords'.
-            .to({x: -0.8, y: 0, z: 7},2000) // Move to (300, 200) in 1 second.
+            .to({x: 3.0420491969188386, y: 0.46414441424843533, z: 6.358239599637057},2000) // Move to (300, 200) in 1 second.
             .easing(TWEEN.Easing.Cubic.InOut) // Use an easing function to make the animation smooth.
             // .yoyo(false)
             // .repeat(1)
@@ -824,6 +831,8 @@
             isPlayIn = true
 
             tween.start()
+            realFire.scale.set(1,1,1)
+            scene.getObjectByName("text").visible = true
 
               const clip  = THREE.AnimationClip.findByName(_GClips, "idle")
 
@@ -860,6 +869,7 @@
           fiveFire.scale.set(0,0,0)
           sixFire.scale.set(0,0,0)
           sevenFire.scale.set(0,0,0)
+          realFire.scale.set(0,0,0)
         }
 
         // scaling sphere
