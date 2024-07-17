@@ -194,6 +194,8 @@
     object.name = "css"
     object.scale.set(0.1, 0.1, 0.1)
 
+    object.renderOrder = 1
+
     //object.rotation.y = Math.PI / 12
 
     scene.add(object);
@@ -350,37 +352,37 @@
 
 
         var fontLoader = new FontLoader()
-        fontLoader.load( './helvetiker_regular.typeface.json', font => {
-          const geometry = new TextGeometry( 
-            `
-            The Fire Nation is one of the world's four 
-            nations and five sovereign states. 
-            It is an absolute monarchy led by 
-            the Fire Lord and home to most firebenders.
-            Geographically, the nation is located along the
-             planet's equator in the western hemisphere and 
-             is composed of several islands, named the Fire Islands.
+        // fontLoader.load( './helvetiker_regular.typeface.json', font => {
+        //   const geometry = new TextGeometry( 
+        //     `
+        //     The Fire Nation is one of the world's four 
+        //     nations and five sovereign states. 
+        //     It is an absolute monarchy led by 
+        //     the Fire Lord and home to most firebenders.
+        //     Geographically, the nation is located along the
+        //      planet's equator in the western hemisphere and 
+        //      is composed of several islands, named the Fire Islands.
 
-            `, {
-            font,
-            size: 0.09,
-            height: 0.01,
-            curveSegments: 10,
-            bevelEnabled: false,
-            bevelThickness: 0,
-            bevelSize: 0,
-            bevelOffset: 0,
-            bevelSegments: 0
-           })
-          const text = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({color: "white"}))
-          text.position.y = 1
-          text.name = "text"
-          //text.position.z = 1
-          text.position.x = -1.2
-          scene.add(text)
-          text.visible = false
+        //     `, {
+        //     font,
+        //     size: 0.09,
+        //     height: 0.01,
+        //     curveSegments: 10,
+        //     bevelEnabled: false,
+        //     bevelThickness: 0,
+        //     bevelSize: 0,
+        //     bevelOffset: 0,
+        //     bevelSegments: 0
+        //    })
+        //   const text = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({color: "white"}))
+        //   text.position.y = 1
+        //   text.name = "text"
+        //   //text.position.z = 1
+        //   text.position.x = -1.2
+        //   scene.add(text)
+        //   text.visible = false
 
-        })
+        // })
 
 
         // Light
@@ -624,6 +626,7 @@
         renderer.setClearColor( 0x000000, 0 ); // the default
         renderer.shadowMap.enabled = true
         renderer.shadowMap.type = THREE.BasicShadowMap
+        renderer.shadowMapSoft = true;
         renderer.setPixelRatio( window.devicePixelRatio )
         renderer.setSize( window.innerWidth, window.innerHeight )
         // renderer.toneMapping = THREE.ACESFilmicToneMapping;
